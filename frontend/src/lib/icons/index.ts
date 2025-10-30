@@ -1,0 +1,38 @@
+/**
+ * Icon exports for the application
+ * Using lucide-react-native for consistent icon system
+ */
+export {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Search,
+  Menu,
+  Home,
+  User,
+  Settings,
+  Bell,
+  Calendar,
+  MapPin,
+  Clock,
+  Star,
+  Heart,
+  Share2,
+  Plus,
+  Minus,
+  Edit,
+  Trash2,
+  Filter,
+  ArrowLeft,
+  ArrowRight,
+  Info,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react-native';
