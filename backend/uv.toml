@@ -1,0 +1,17 @@
+# uv configuration file
+
+[pip]
+# Use Python 3.13
+python-version = "3.13"
+
+# Prefer binary wheels for faster installation
+prefer-binary = true
+
+# Use cached downloads
+cache-dir = ".uv-cache"
+
+# Index configuration
+index-url = "https://pypi.org/simple"
+
+# Compile options
+compile-bytecode = true
