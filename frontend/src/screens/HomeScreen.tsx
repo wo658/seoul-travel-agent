@@ -16,7 +16,12 @@ import {
 } from '@/components/ui';
 import { MapPin, Calendar, Sparkles, Clock, TrendingUp, Loader2 } from '@/lib/icons/';
 
-export function HomeScreen() {
+export interface HomeScreenProps {
+  onStartChat?: () => void;
+  onViewConversations?: () => void;
+}
+
+export function HomeScreen({ onStartChat, onViewConversations }: HomeScreenProps) {
   const [destination, setDestination] = useState('');
   const [duration, setDuration] = useState('');
 
@@ -58,10 +63,15 @@ export function HomeScreen() {
                 onChangeText={setDuration}
               />
             </CardContent>
-            <CardFooter>
-              <Button className="flex-1">
+            <CardFooter className="gap-2">
+              <Button className="flex-1" onPress={onStartChat}>
                 <Text className={buttonTextVariants({ variant: 'default' })}>
-                  여행 계획 시작하기
+                  새 대화 시작
+                </Text>
+              </Button>
+              <Button variant="outline" className="flex-1" onPress={onViewConversations}>
+                <Text className={buttonTextVariants({ variant: 'outline' })}>
+                  대화 목록
                 </Text>
               </Button>
             </CardFooter>

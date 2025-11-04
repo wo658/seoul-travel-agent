@@ -1,7 +1,11 @@
-.PHONY: help install dev build up down logs clean restart ps backend-shell db-shell test
+.PHONY: help install dev build up down logs clean restart ps backend-shell db-shell test web
 
 help: ## Show this help message
 	@echo "Seoul Travel Agent - Development Commands"
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make web        - Docker로 웹 뷰 테스트 (권장)"
+	@echo "  make dev        - 로컬 개발 서버 시작"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
@@ -29,6 +33,19 @@ dev-frontend: ## Run frontend only (local)
 	cd frontend && npm run web
 
 # Docker Commands (Full Stack)
+web: build ## 🚀 웹 뷰 테스트 (Docker) - 권장!
+	@echo "🐳 Starting services with Docker..."
+	docker-compose up -d
+	@echo ""
+	@echo "✅ Services started!"
+	@echo ""
+	@echo "📱 Web App:  http://localhost:3000"
+	@echo "🔧 Backend:  http://localhost:8000"
+	@echo "📖 API Docs: http://localhost:8000/api/docs"
+	@echo ""
+	@echo "📝 Logs: make logs"
+	@echo "🛑 Stop:  make down"
+
 build: ## Build Docker images
 	docker-compose build
 

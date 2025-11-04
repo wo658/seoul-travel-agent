@@ -22,3 +22,6 @@ export {
 export { Input, type InputProps } from './input';
 export { Text } from './text';
 export { Separator } from './separator';
+
+// Re-export chat components for convenience
+export * from '../chat';
