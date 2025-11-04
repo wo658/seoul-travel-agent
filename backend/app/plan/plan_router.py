@@ -1,8 +1,15 @@
 """Plan domain router."""
 
+from datetime import datetime
 from typing import List
+
 from fastapi import APIRouter
-from .schemas import TravelPlanCreate, TravelPlanUpdate, TravelPlanResponse
+
+from app.plan.plan_schemas import (
+    TravelPlanCreate,
+    TravelPlanResponse,
+    TravelPlanUpdate,
+)
 
 router = APIRouter()
 
@@ -18,8 +25,6 @@ async def list_plans():
 async def create_plan(plan: TravelPlanCreate):
     """Create a new travel plan."""
     # TODO: Implement plan creation
-    from datetime import datetime
-
     return TravelPlanResponse(
         id=1,
         user_id=1,
@@ -36,8 +41,6 @@ async def create_plan(plan: TravelPlanCreate):
 async def get_plan(plan_id: int):
     """Get a specific travel plan."""
     # TODO: Implement plan retrieval
-    from datetime import datetime
-
     return TravelPlanResponse(
         id=plan_id,
         user_id=1,
@@ -52,8 +55,6 @@ async def get_plan(plan_id: int):
 async def update_plan(plan_id: int, plan: TravelPlanUpdate):
     """Update a travel plan."""
     # TODO: Implement plan update
-    from datetime import datetime
-
     return TravelPlanResponse(
         id=plan_id,
         user_id=1,

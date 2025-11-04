@@ -1,8 +1,8 @@
-"""Database models."""
+"""Database models and configuration."""
 
 from datetime import datetime
-from typing import Optional
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 

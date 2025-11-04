@@ -3,10 +3,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from seoul_travel.ai.router import router as ai_router
-from seoul_travel.auth.router import router as auth_router
-from seoul_travel.plan.router import router as plan_router
-from seoul_travel.config.settings import settings
+from app.ai import router as ai_router
+from app.auth import router as auth_router
+from app.config import settings
+from app.plan import router as plan_router
 
 
 def create_application() -> FastAPI:

@@ -1,7 +1,11 @@
 """AI service - LLM integration logic."""
 
-from typing import List
-from .schemas import ChatRequest, ChatResponse, RecommendationRequest, RecommendationResponse
+from app.ai.ai_schemas import (
+    ChatRequest,
+    ChatResponse,
+    RecommendationRequest,
+    RecommendationResponse,
+)
 
 
 class AIService:

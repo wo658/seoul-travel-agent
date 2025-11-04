@@ -1,7 +1,8 @@
 """Auth domain router."""
 
 from fastapi import APIRouter
-from .schemas import UserCreate, UserLogin, Token, UserResponse
+
+from app.auth.auth_schemas import Token, UserCreate, UserLogin, UserResponse
 
 router = APIRouter()
 

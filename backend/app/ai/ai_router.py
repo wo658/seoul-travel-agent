@@ -1,8 +1,14 @@
 """AI domain router."""
 
 from fastapi import APIRouter
-from .schemas import ChatRequest, ChatResponse, RecommendationRequest, RecommendationResponse
-from .service import ai_service
+
+from app.ai.ai_schemas import (
+    ChatRequest,
+    ChatResponse,
+    RecommendationRequest,
+    RecommendationResponse,
+)
+from app.ai.ai_service import ai_service
 
 router = APIRouter()
 
