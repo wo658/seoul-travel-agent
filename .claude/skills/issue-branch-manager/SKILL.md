@@ -204,33 +204,71 @@ git push -u origin feature/BLOG-15-bookmark-feature
 **Handle Push Errors:**
 - Branch already exists → Verify it's the correct branch
 - No upstream → Use `-u` flag as shown above
-- Push rejected → Pull and rebase if needed
+- Push rejected → Pull and merge if needed (never rebase)
 
-#### Step 4: Merge to Develop
-Merge feature branch into develop:
+#### Step 4: Create Pull Request
+Create PR to merge feature branch into develop/master:
 
 ```bash
-# Switch to develop
-git checkout develop
+# Create PR using GitHub CLI
+gh pr create --title "[Issue Title]" --body "[PR Description]" --base develop
+```
 
-# Pull latest changes
+**PR Description Format:**
+```markdown
+## Summary
+[Brief description of changes]
+
+## Changes
+- [Change 1]
+- [Change 2]
+
+## Testing
+- [Test 1]
+- [Test 2]
+
+## Related Issue
+Closes BLOG-15
+```
+
+**CRITICAL - PR Guidelines:**
+- **NO EMOJIS**: Never use emojis in PR title or description
+- **NO ATTRIBUTION**: Do not include "Generated with Claude Code" or similar text
+- **PROFESSIONAL TONE**: Use plain, professional language
+- **NO REBASE**: Never use git rebase - always use merge workflow
+
+#### Step 5: Merge Pull Request
+Merge PR and clean up branches:
+
+```bash
+# Merge PR using GitHub CLI (squash merge recommended)
+gh pr merge [PR_NUMBER] --squash --delete-branch
+
+# Switch to develop/master
+git checkout develop  # or master
+
+# Pull merged changes
 git pull origin develop
 
-# Merge feature branch
-git merge feature/BLOG-15-bookmark-feature
-
-# Push to remote
-git push origin develop
+# Delete local feature branch
+git branch -d feature/BLOG-15-bookmark-feature
 ```
+
+**Merge Strategy:**
+- Use squash merge for clean history
+- Never use rebase (prohibited)
+- Delete remote branch after merge
+- Delete local branch after sync
 
 **Merge Conflict Handling:**
 If conflicts occur:
 1. Show conflicting files
-2. Ask user to resolve conflicts
+2. Ask user to resolve conflicts manually
 3. After resolution, verify and commit
 4. Continue merge process
+5. Never suggest rebase as solution
 
-#### Step 5: Update Linear Issue
+#### Step 6: Update Linear Issue
 Add completion comment to Linear issue:
 
 ```javascript
@@ -273,16 +311,7 @@ await linear_edit_issue({
 });
 ```
 
-#### Step 6: Cleanup (Optional)
-Ask user if they want to delete the feature branch:
-
-```bash
-# Delete local branch
-git branch -d feature/BLOG-15-bookmark-feature
-
-# Delete remote branch
-git push origin --delete feature/BLOG-15-bookmark-feature
-```
+**Note:** Branch cleanup is handled automatically in Step 5 (gh pr merge --delete-branch and local branch deletion). No separate cleanup step needed.
 
 Reference `references/branch-workflow.md` for detailed branching strategies and best practices.
 
@@ -338,7 +367,7 @@ When working on multiple related issues:
 
 3. **Coordinate Merges:**
    - Merge dependencies first
-   - Rebase dependent branches if needed
+   - Merge (not rebase) dependent branches to incorporate changes
 
 ### Branch Recovery
 
@@ -459,14 +488,18 @@ Bash script providing common Git operations for branch management, validation, a
 ## Best Practices
 
 ### Branch Management
-1. **Always start from develop** - Ensure clean starting point
+1. **Always start from develop/master** - Ensure clean starting point
 2. **Pull before branch creation** - Get latest changes
 3. **Use consistent naming** - Follow `{type}/BLOG-{N}-{description}` pattern
 4. **Commit frequently** - Small, atomic commits
 5. **Descriptive commit messages** - Include issue reference
 6. **Test before merging** - Verify functionality
 7. **Keep branches short-lived** - Merge within days, not weeks
-8. **Delete merged branches** - Keep repository clean
+8. **Create PR for review** - Use gh pr create
+9. **Merge PR to complete** - Use gh pr merge --squash --delete-branch
+10. **Clean up local branch** - Delete after pulling merged changes
+11. **Never use rebase** - Always use merge workflow
+12. **No emojis in PRs** - Professional language only
 
 ### Issue Execution
 1. **Read full issue first** - Understand complete requirements
