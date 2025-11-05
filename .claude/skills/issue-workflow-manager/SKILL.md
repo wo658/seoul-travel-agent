@@ -41,14 +41,17 @@ Linear 이슈 기반 개발 워크플로우 관리.
 - `bug.md`: 버그 수정
 - `task.md`: 작업/개선/문서화
 
+**이슈 수정?**
+→ **이슈 수정만 진행** (다른 작업 금지)
+- Linear MCP로 이슈 정보 조회
+- 필요한 필드만 수정 (title, description, state 등)
+- 코드 작업 없이 이슈 메타데이터만 변경
+
 **작업 시작?**
 → `templates/start-work.md` 로드
 
 **작업 완료?**
 → `templates/complete-work.md` 로드
-
-**참고 필요?**
-→ `references/` 디렉토리 확인
 
 ## 핵심 원칙
 
@@ -94,112 +97,56 @@ docs(readme): update installation guide
 
 ### Linear MCP
 ```bash
-# Team 조회
-linear_get_teams
-
 # Issue 생성
 linear_create_issue --title "..." --description "..." --teamId "..."
 
-# Issue 조회
-linear_get_issue --identifier "ECM-123"
-
-# Issue 수정
-linear_edit_issue --issueId "uuid" --stateId "state-uuid"
+# Issue 조회/수정
+linear_get_issue --identifier "SEO-123"
+linear_edit_issue --issueId "uuid" --title "..." --description "..." --stateId "..."
 ```
 
-### Git
+### Git/PR
 ```bash
-# Branch 생성
-git checkout -b feature/ECM-123-description
-
-# Push
-git push -u origin feature/ECM-123-description
-
-# PR 생성
+git checkout -b feature/SEO-123-description
+git push -u origin feature/SEO-123-description
 gh pr create --title "..." --body "..."
-
-# Merge
 gh pr merge --merge --delete-branch
 ```
 
-## Resources
+## Templates
 
-### templates/issues/
-이슈 타입별 생성 template (필요한 것만 로드):
-- `feature.md`: 신규 기능 개발
-- `bug.md`: 버그 수정
-- `task.md`: 작업/개선/문서화
+- `templates/issues/{type}.md`: 이슈 타입별 생성 template
+- `templates/start-work.md`: 작업 시작 절차
+- `templates/complete-work.md`: PR 생성 및 완료
+- `references/`: 상세 참고 문서 (필요시 로드)
 
-### templates/
-워크플로우 template:
-- `start-work.md`: 작업 시작 절차
-- `complete-work.md`: PR 생성 및 완료
+## 예시
 
-### references/
-상세 참고 문서 (필요시 로드):
-- `linear-quick.md`: Linear MCP 빠른 참조
-- `git-quick.md`: Git 빠른 참조
-- `naming.md`: 명명 규칙
-
-## 예시 플로우
-
-### Feature 개발 (올바른 예시)
+### Feature 개발
 ```
-1. "LangGraph 기반 여행 계획 Agent 구현 이슈 생성해줘"
-   → Read templates/issues/feature.md (필수)
-   → 템플릿 구조 확인
-   → Linear 이슈 생성 (한글 제목/설명, 기술명은 영어)
-   → Title: "LangGraph 기반 여행 계획 Agent 구현"
-   → Description: 한글 작성 + 기술명(LangGraph, FastAPI, PostgreSQL)은 영어
-
-2. "SEO-123 작업 시작할게"
-   → templates/start-work.md 로드
-   → feature/SEO-123-langgraph-agent branch 생성 (영어)
-   → 첫 커밋: "feat(agent): initialize LangGraph workflow structure"
-
-3. [개발 진행...]
-
-4. "SEO-123 완료했어"
-   → templates/complete-work.md 로드
-   → PR 생성 (Title: "LangGraph 기반 Agent 구현 완료", 한글)
-   → merge, cleanup
+1. "LangGraph Agent 이슈 생성" → Read templates/issues/feature.md → 이슈 생성
+2. "SEO-123 시작" → branch 생성 (feature/SEO-123-langgraph-agent)
+3. "SEO-123 완료" → PR 생성/merge
 ```
 
-### Bug 수정 (올바른 예시)
+### 이슈 수정 (다른 작업 금지)
 ```
-1. "TourAPI 클라이언트 타임아웃 버그 이슈 만들어줘"
-   → Read templates/issues/bug.md (필수)
-   → 템플릿 구조 확인
-   → Title: "TourAPI 클라이언트 타임아웃 에러 수정" (기술명 영어)
-   → Description: 한글 (재현 단계, 로그 포함)
+1. "SEO-123 이슈 제목 수정해줘"
+   → linear_get_issue로 조회
+   → linear_edit_issue로 title만 수정
+   → 코드 작업/브랜치 생성 등 다른 작업 진행 안 함
 
-2. "SEO-124 시작"
-   → bugfix/SEO-124-tourapi-timeout branch (영어)
-   → 첫 커밋: "fix(api): add timeout handling for TourAPI client"
-
-3. "SEO-124 완료"
-   → PR merge, cleanup
+2. "SEO-124 상태를 In Progress로 변경"
+   → 이슈 상태만 변경, 다른 작업 진행 안 함
 ```
 
-### 잘못된 예시 (금지)
+### 잘못된 예시
 ```
-❌ "Implement LangGraph-based travel planning agent"
-   → 제목 전체 영어 금지 (기술명만 영어)
-   ✅ 올바른 예: "LangGraph 기반 여행 계획 Agent 구현"
-
-❌ Title: "랭그래프 워크플로우 구현"
-   → 기술명 번역 금지
-   ✅ 올바른 예: "LangGraph 워크플로우 구현"
-
-❌ Branch: feature/SEO-123-랭그래프-통합
-   → 브랜치명 한글 금지
-   ✅ 올바른 예: feature/SEO-123-langgraph-integration
-
-❌ 템플릿 로드 없이 바로 이슈 생성
-   → 반드시 템플릿 먼저 읽기
-
-❌ "🎉 새 기능 추가"
-   → 이모지 사용 금지
+❌ 전체 영어 제목: "Implement agent" → ✅ "Agent 구현"
+❌ 기술명 번역: "랭그래프" → ✅ "LangGraph"
+❌ 한글 브랜치: feature/SEO-123-에이전트 → ✅ feature/SEO-123-agent
+❌ 템플릿 없이 이슈 생성 → ✅ 템플릿 먼저 로드
+❌ 이모지 사용: "🎉 기능 추가" → ✅ "기능 추가"
 ```
 
 ## 소규모 팀 최적화
@@ -223,27 +170,7 @@ gh pr merge --merge --delete-branch
 
 ## Troubleshooting
 
-**Linear 인증 오류**
-```bash
-echo $LINEAR_ACCESS_TOKEN  # 확인
-```
-
-**Branch 이미 존재**
-```bash
-git branch -D old-branch  # 삭제 후 재생성
-```
-
-**PR 생성 실패**
-```bash
-gh auth status  # GitHub CLI 인증 확인
-```
-
-**Merge conflict**
-```bash
-git fetch origin
-git merge origin/master
-# Conflict 해결 후
-git add <resolved-files>
-git commit -m "Merge master into feature branch"
-git push
-```
+- Linear 인증: `echo $LINEAR_ACCESS_TOKEN`
+- Branch 충돌: `git branch -D old-branch`
+- PR 실패: `gh auth status`
+- Merge conflict: fetch → merge → resolve → commit → push
