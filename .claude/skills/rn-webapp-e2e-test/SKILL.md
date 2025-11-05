@@ -20,6 +20,14 @@ Activate this skill when:
 
 **Not for**: Native React Native app testing (requires Appium/Detox), API-only testing, unit tests
 
+## Communication Guidelines
+
+**CRITICAL**: When creating PRs, commits, or any documentation related to this skill:
+- **NO EMOJIS**: Never use emojis in PR descriptions, commit messages, or test reports
+- **NO ATTRIBUTION**: Do not include phrases like "Generated with Claude Code", "By Claude Code", or similar attribution text
+- **PROFESSIONAL TONE**: Use plain, professional language without decorative elements
+- **PLAIN TEXT ONLY**: Use simple markers like PASS/FAIL instead of emoji indicators
+
 ## Quick Start
 
 ### Basic Test Request
@@ -247,17 +255,19 @@ Animation: 1000ms
 
 Generate structured test reports using this format:
 
+**IMPORTANT**: Do NOT use emojis in test reports. Use plain text markers only (PASS/FAIL).
+
 ```markdown
 ## Test Results: [Feature Name]
 
 **URL**: [local-url]
 **Device**: iPhone SE (375x667)
-**Status**: ✅ PASS | ❌ FAIL
+**Status**: PASS | FAIL
 
 ### Test Steps
-1. [Step description] - ✅
-2. [Step description] - ✅
-3. [Step description] - ❌
+1. [Step description] - PASS
+2. [Step description] - PASS
+3. [Step description] - FAIL
 
 ### Evidence
 - Screenshots: [list paths]
