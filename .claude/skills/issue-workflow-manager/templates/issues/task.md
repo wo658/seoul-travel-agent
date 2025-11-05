@@ -20,34 +20,43 @@ linear_get_teams
 
 ### 2. Issue 내용 구조화
 
-**Title 포맷**:
+**Title 포맷** (한글 필수):
 ```
-{동사} {대상}
+{대상} {동사}
 ```
 
 **동사 선택**:
-- Update: 기존 내용 수정
-- Refactor: 코드 개선
-- Improve: 성능/품질 향상
-- Remove: 제거
-- Upgrade: 버전 업그레이드
-- Add: 추가 (작은 규모)
+- 업데이트: 기존 내용 수정
+- 리팩토링: 코드 개선
+- 개선: 성능/품질 향상
+- 제거: 삭제/정리
+- 업그레이드: 버전 업그레이드
+- 추가: 작은 규모 추가
 
-**예시**:
-- "Update API documentation"
-- "Refactor database connection pool"
-- "Improve error handling"
-- "Remove deprecated endpoints"
-- "Upgrade React to v18"
+**예시** (기술명은 원본 영어 그대로):
+- "API 문서 업데이트"
+- "PostgreSQL 연결 풀 리팩토링"
+- "TourAPI 에러 핸들링 개선"
+- "deprecated FastAPI 엔드포인트 제거"
+- "React Native 0.76 업그레이드"
+- "LangGraph 메모리 최적화"
 
-**Description 구조**:
+**잘못된 예시**:
+- ❌ "투어API 에러 핸들링 개선" → 원본 기술명(TourAPI) 필수
+- ❌ "리액트 네이티브 업그레이드" → 기술명 번역 금지
+
+**Description 구조** (한글 필수):
 ```markdown
 # 목적
-[작업의 목적과 배경]
+[작업의 목적과 배경을 1-2문장으로]
+
+## 배경
+[왜 이 작업이 필요한지]
 
 ## 작업 내용
 - 작업 항목 1
 - 작업 항목 2
+- 작업 항목 3
 
 ## 예상 효과
 - 효과 1
@@ -56,6 +65,7 @@ linear_get_teams
 ## 체크리스트
 - [ ] 항목 1
 - [ ] 항목 2
+- [ ] 항목 3
 ```
 
 ### 3. Issue 생성
@@ -88,62 +98,84 @@ EOF
 
 ### 리팩토링
 ```
-User: "API response handler 리팩토링 이슈 만들어"
+User: "TourAPI 클라이언트 리팩토링 이슈 만들어"
 
-Title: "Refactor API response handlers"
+Title: "TourAPI 클라이언트 에러 핸들링 리팩토링"
 Description:
 # 목적
-중복 코드 제거 및 에러 처리 개선
+TourAPI 호출 시 중복 코드 제거 및 에러 처리 개선
+
+## 배경
+현재 각 API 호출마다 중복된 에러 처리 로직이 산재되어 있음
 
 ## 작업 내용
-- 공통 handler 함수 추출
-- 에러 타입별 처리 로직 통합
-- TypeScript 타입 정의 강화
+- 공통 에러 핸들러 함수 추출
+- 재시도 로직 통합 (exponential backoff)
+- httpx timeout 설정 중앙화
+- 타입 힌팅 강화
 
 ## 예상 효과
-- 코드 중복 50% 감소
-- 유지보수성 향상
-- 타입 안정성 확보
+- 코드 중복 60% 감소
+- 에러 처리 일관성 향상
+- 유지보수성 개선
+
+## 체크리스트
+- [ ] 공통 핸들러 함수 구현
+- [ ] 모든 API 호출 리팩토링
+- [ ] 단위 테스트 추가
 ```
 
 ### 문서화
 ```
-User: "API 문서 업데이트 이슈"
+User: "TourAPI 통합 가이드 문서 작성 이슈"
 
-Title: "Update API documentation"
+Title: "TourAPI 통합 가이드 문서 작성"
 Description:
 # 목적
-v2 API endpoint 문서화
+TourAPI 통합 방법 및 사용 가이드 문서화
+
+## 배경
+개발자들이 TourAPI 클라이언트를 쉽게 사용할 수 있도록 가이드 필요
 
 ## 작업 내용
-- 새로운 endpoint 추가
-- 요청/응답 예시 업데이트
-- 에러 코드 테이블 추가
+- TourAPI 인증 방법 설명
+- 주요 엔드포인트 사용 예시
+- 에러 처리 가이드
+- 캐싱 전략 문서화
 
 ## 체크리스트
-- [ ] OpenAPI spec 업데이트
-- [ ] README 수정
-- [ ] 예시 코드 추가
+- [ ] docs/tourapi-guide.md 작성
+- [ ] 코드 예시 추가
+- [ ] 에러 케이스 문서화
 ```
 
-### 기술 부채 해결
+### 업그레이드
 ```
-User: "레거시 코드 정리 이슈"
+User: "LangGraph 최신 버전 업그레이드 이슈"
 
-Title: "Remove deprecated authentication methods"
+Title: "LangGraph 0.2.x 업그레이드"
 Description:
 # 목적
-v1 인증 방식 제거 및 v2 완전 전환
+LangGraph 최신 버전으로 업그레이드하여 성능 및 기능 개선
+
+## 배경
+LangGraph 0.2.x에서 체크포인팅 성능이 30% 개선됨
 
 ## 작업 내용
-- v1 auth 관련 코드 제거
-- v2 migration guide 작성
-- 관련 테스트 정리
+- LangGraph 0.2.x 버전 업그레이드
+- Breaking changes 대응
+- 기존 워크플로우 마이그레이션
+- 테스트 수정
+
+## 예상 효과
+- 체크포인팅 성능 30% 향상
+- 새로운 기능 활용 가능
+- 버그 수정 적용
 
 ## 체크리스트
-- [ ] 코드 제거
-- [ ] 문서 업데이트
-- [ ] 테스트 정리
+- [ ] 의존성 업데이트
+- [ ] 코드 마이그레이션
+- [ ] 테스트 통과 확인
 ```
 
 ## 주의사항
@@ -154,6 +186,8 @@ v1 인증 방식 제거 및 v2 완전 전환
 - ❌ 작업 목적 없이 나열만
 
 **권장**:
+- ✅ 한글 제목 + 기술명은 원본 영어 (예: "TourAPI 클라이언트 리팩토링")
+- ✅ 기술명 번역 금지 (TourAPI, LangGraph, React, PostgreSQL 등)
 - ✅ 작업 목적 명확히
 - ✅ 구체적인 항목 리스트
 - ✅ 예상 효과 포함

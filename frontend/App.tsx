@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { HomeScreen, ChatScreen, ConversationListScreen } from '@/screens';
-import '@/global.css';
+import './global.css';
 
 type Screen = 'home' | 'conversations' | 'chat';
 

@@ -7,13 +7,39 @@ description: Linear 이슈 전체 생명주기 관리 스킬. 이슈 생성, 작
 
 Linear 이슈 기반 개발 워크플로우 관리.
 
+## 필수 규칙 (MANDATORY)
+
+### 언어 규칙
+**모든 이슈 커뮤니케이션은 한글로 작성**
+- ✅ Title: 한글 (예: "사용자 인증 시스템 구현")
+- ✅ Description: 한글 (기술 용어는 영어 병기 가능)
+- ✅ Comments: 한글
+- ❌ 전체 영어 제목/설명 금지
+
+**예외**:
+- 기술명/라이브러리명: React, FastAPI, LangGraph, TourAPI 등 (원본 기술명은 반드시 영어)
+- 브랜치명: feature/SEO-123-langgraph-integration (영어 필수)
+- 코드 블록 내용
+- 명령어 및 파일명
+- 커밋 메시지: Conventional Commits 규칙 (영어)
+
+### 템플릿 필수 사용
+**이슈 생성 시 반드시 해당 타입의 템플릿을 먼저 로드하고 따라야 함**
+
+1. 사용자 요청 분석 → 이슈 타입 결정 (feature/bug/task)
+2. 해당 템플릿 파일 읽기 (Read tool 사용)
+3. 템플릿 구조에 맞춰 내용 작성
+4. Linear 이슈 생성
+
+**템플릿 미사용 시 → 이슈 생성 거부**
+
 ## 워크플로우 선택
 
 **이슈 생성?**
-→ `templates/issues/{type}.md` 로드
-- `feature.md`: 새 기능
+→ **필수**: `templates/issues/{type}.md` 먼저 로드
+- `feature.md`: 새 기능 개발
 - `bug.md`: 버그 수정
-- `task.md`: 작업/개선
+- `task.md`: 작업/개선/문서화
 
 **작업 시작?**
 → `templates/start-work.md` 로드
@@ -32,22 +58,32 @@ Linear 이슈 기반 개발 워크플로우 관리.
 - 간결한 체크리스트 중심
 
 ### 명명 규칙
-**Branch**: `{type}/{ISSUE-ID}-{description}`
+**Branch** (영어 필수): `{type}/{ISSUE-ID}-{description}`
 ```
-feature/ECM-123-user-auth
-bugfix/ECM-124-null-fix
+feature/SEO-123-user-auth
+feature/SEO-127-langgraph-workflow
+bugfix/SEO-124-null-fix
+task/SEO-125-refactor-api
 ```
 
-**Commit**: Conventional Commits
+**Commit** (영어 필수): Conventional Commits
 ```
 feat(auth): add JWT validation
+feat(agent): implement LangGraph state machine
 fix(api): resolve null pointer
+docs(readme): update installation guide
 ```
+
+**기술명 사용 규칙**:
+- ✅ 원본 기술명 그대로: React, FastAPI, LangGraph, PostgreSQL, TourAPI
+- ✅ 브랜치 설명: langgraph-integration, react-components, tourapi-client
+- ❌ 번역 금지: 랭그래프, 리액트, 투어API (X)
 
 ### Linear 포맷팅
 - ❌ 이모지 사용 금지 (title, description, comment 모두)
 - ✅ Plain text + markdown만 사용
-- ✅ 기술적이고 전문적인 톤
+- ✅ 한글로 명확하고 전문적인 톤
+- ✅ 기술 용어는 영어 병기 가능
 
 ### Git Workflow
 - Base: `master`/`main`
@@ -107,33 +143,63 @@ gh pr merge --merge --delete-branch
 
 ## 예시 플로우
 
-### Feature 개발
+### Feature 개발 (올바른 예시)
 ```
-1. "ECM-123 feature 이슈 생성해줘"
-   → templates/issues/feature.md 로드
-   → Linear 이슈 생성
+1. "LangGraph 기반 여행 계획 Agent 구현 이슈 생성해줘"
+   → Read templates/issues/feature.md (필수)
+   → 템플릿 구조 확인
+   → Linear 이슈 생성 (한글 제목/설명, 기술명은 영어)
+   → Title: "LangGraph 기반 여행 계획 Agent 구현"
+   → Description: 한글 작성 + 기술명(LangGraph, FastAPI, PostgreSQL)은 영어
 
-2. "ECM-123 작업 시작할게"
+2. "SEO-123 작업 시작할게"
    → templates/start-work.md 로드
-   → feature/ECM-123-description branch 생성
+   → feature/SEO-123-langgraph-agent branch 생성 (영어)
+   → 첫 커밋: "feat(agent): initialize LangGraph workflow structure"
 
 3. [개발 진행...]
 
-4. "ECM-123 완료했어"
+4. "SEO-123 완료했어"
    → templates/complete-work.md 로드
-   → PR 생성, merge, cleanup
+   → PR 생성 (Title: "LangGraph 기반 Agent 구현 완료", 한글)
+   → merge, cleanup
 ```
 
-### Bug 수정
+### Bug 수정 (올바른 예시)
 ```
-1. "ECM-124 버그 이슈 생성"
-   → templates/issues/bug.md 로드
+1. "TourAPI 클라이언트 타임아웃 버그 이슈 만들어줘"
+   → Read templates/issues/bug.md (필수)
+   → 템플릿 구조 확인
+   → Title: "TourAPI 클라이언트 타임아웃 에러 수정" (기술명 영어)
+   → Description: 한글 (재현 단계, 로그 포함)
 
-2. "ECM-124 시작"
-   → bugfix/ECM-124-fix branch
+2. "SEO-124 시작"
+   → bugfix/SEO-124-tourapi-timeout branch (영어)
+   → 첫 커밋: "fix(api): add timeout handling for TourAPI client"
 
-3. "ECM-124 완료"
+3. "SEO-124 완료"
    → PR merge, cleanup
+```
+
+### 잘못된 예시 (금지)
+```
+❌ "Implement LangGraph-based travel planning agent"
+   → 제목 전체 영어 금지 (기술명만 영어)
+   ✅ 올바른 예: "LangGraph 기반 여행 계획 Agent 구현"
+
+❌ Title: "랭그래프 워크플로우 구현"
+   → 기술명 번역 금지
+   ✅ 올바른 예: "LangGraph 워크플로우 구현"
+
+❌ Branch: feature/SEO-123-랭그래프-통합
+   → 브랜치명 한글 금지
+   ✅ 올바른 예: feature/SEO-123-langgraph-integration
+
+❌ 템플릿 로드 없이 바로 이슈 생성
+   → 반드시 템플릿 먼저 읽기
+
+❌ "🎉 새 기능 추가"
+   → 이모지 사용 금지
 ```
 
 ## 소규모 팀 최적화
