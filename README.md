@@ -1,184 +1,99 @@
-# Seoul Travel Agent
+# 🏯 Seoul Travel Agent
 
-AI-powered travel planning platform for Seoul
+AI 기반 서울 여행 계획 도우미 - React Native + FastAPI
 
-## Project Structure
-
-```
-seoul-travel-agent/
-├── backend/                 # FastAPI backend
-│   ├── src/
-│   │   └── seoul_travel/
-│   │       ├── ai/         # AI domain (LLM integration)
-│   │       ├── auth/       # Authentication domain
-│   │       ├── plan/       # Travel plan domain
-│   │       ├── database/   # Database models
-│   │       ├── config/     # Configuration
-│   │       └── main.py     # FastAPI app
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/                # React Native app
-└── docker-compose.yml       # Docker orchestration
-```
-
-## Tech Stack
-
-### Backend
-- **Framework**: FastAPI
-- **Database**: PostgreSQL
-- **Cache**: Redis
-- **LLM**: OpenAI / Anthropic Claude
-
-### Frontend
-- **Framework**: React Native (Expo)
-
-## Quick Start
-
-### Prerequisites
-
-**Backend:**
-- Python 3.13+
-- [uv](https://github.com/astral-sh/uv) - Fast Python package manager
+## 🚀 빠른 시작
 
 ```bash
-# Install uv (macOS/Linux)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Or via Homebrew
-brew install uv
+make webapp
+# 30초 대기 → http://localhost:8081 접속
 ```
 
-### Option 1: Local Development (Recommended - Fast!)
+**주요 명령어**:
+- `make webapp` - 모든 서비스 자동 실행 (권장)
+- `make web` - Docker 전체 스택 (PostgreSQL)
+- `make stop-webapp` - 서비스 중지
+- `make help` - 전체 명령어 확인
 
-**SQLite + Hot Reload - No Docker needed!**
+## 📦 기술 스택
 
+**Frontend**: React Native 0.81 + Expo 54 + NativeWind + TypeScript
+**Backend**: FastAPI + SQLAlchemy + SQLite/PostgreSQL + OpenAI API
+
+## 🛠️ 개발 가이드
+
+### 로컬 개발
 ```bash
-# Install all dependencies
+# 의존성 설치
 make install
 
-# Run in separate terminals:
-# Terminal 1 - Backend
+# Terminal 1
 make dev-backend
 
-# Terminal 2 - Frontend
+# Terminal 2
 make dev-frontend
 ```
 
-**Quick Commands:**
+### Docker 개발
 ```bash
-make help           # Show all commands
-make install        # Install all dependencies
-make dev-backend    # Run backend only
-make dev-frontend   # Run frontend only
-make test           # Run tests
-make lint           # Check code quality
+make build && make up
+make logs        # 로그 확인
+make down        # 중지
 ```
 
-### Option 2: Docker (Full Stack - Production-like)
-
-**PostgreSQL + Full Integration**
-
+### 테스트 & 품질
 ```bash
-# Build and start all services
-make up
-
-# View logs
-make logs
-make logs-backend   # Backend only
-make logs-frontend  # Frontend only
-
-# Stop services
-make down
+make test        # 테스트 실행
+make lint        # 코드 린트
+make format      # 코드 포맷
 ```
 
-**Docker Commands:**
-```bash
-make help           # Show all commands
-make up             # Start all services
-make down           # Stop all services
-make restart        # Restart services
-make ps             # Show status
-make backend-shell  # Access backend container
-make db-shell       # Access PostgreSQL
+## 🏗️ 프로젝트 구조
+
+```
+seoul-travel-agent/
+├── backend/                 # FastAPI
+│   └── src/seoul_travel/
+│       ├── main.py
+│       ├── ai/             # LLM 통합 (TODO)
+│       ├── auth/           # 인증
+│       └── plan/           # 여행 계획
+└── frontend/               # React Native
+    └── src/
+        ├── components/     # UI + 채팅 컴포넌트 ✅
+        ├── screens/        # 화면 ✅
+        ├── contexts/       # 상태관리 ✅
+        ├── hooks/          # 커스텀 훅 ✅
+        └── services/       # API 서비스 ✅
 ```
 
-### Access URLs
+## 📖 API 문서
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/api/docs
-- **PostgreSQL** (Docker only): localhost:5432
+- **ReDoc**: http://localhost:8000/api/redoc
 
-## Development Workflows
+## 🐛 문제 해결
 
-### Local Development (⚡ Fastest)
 ```bash
-make install        # One-time setup
-make dev-backend    # Terminal 1
-make dev-frontend   # Terminal 2
+# 포트 충돌
+lsof -ti:8000 | xargs kill
+lsof -ti:8081 | xargs kill
+
+# 의존성 재설치
+make clean && make install
+
+# Docker 정리
+make clean-db
 ```
-- ✅ No Docker needed
-- ✅ SQLite database (auto-created)
-- ✅ Hot reload on both stacks
-- ✅ 10-100x faster with uv
-- ✅ Best for rapid prototyping
 
-### Docker Development (🐳 Production-like)
-```bash
-make up            # Start everything
-make logs          # Monitor logs
-make down          # Stop when done
-```
-- ✅ Full stack integration
-- ✅ PostgreSQL database
-- ✅ Container isolation
-- ✅ Matches production environment
-- ✅ Best for integration testing
+## 📝 개발 상태
 
-### API Endpoints
+**완료**: 프로젝트 구조, Docker 환경, UI 컴포넌트, 채팅 UI, 상태관리, API 서비스
 
-#### Health Check
-- `GET /api/health`
+**진행중**: AI 서비스, 대화 API, SSE 스트리밍, DB 마이그레이션
 
-#### AI Domain
-- `POST /api/ai/chat` - Chat with AI assistant
-- `POST /api/ai/recommendations` - Get travel recommendations
+**예정**: 여행 계획 생성, 사용자 인증, 프로덕션 배포
 
-#### Auth Domain
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login
-- `GET /api/auth/me` - Get current user
+## 📄 라이선스
 
-#### Plan Domain
-- `GET /api/plans/` - List travel plans
-- `POST /api/plans/` - Create plan
-- `GET /api/plans/{id}` - Get plan
-- `PATCH /api/plans/{id}` - Update plan
-- `DELETE /api/plans/{id}` - Delete plan
-
-## Domain Architecture
-
-Following Netflix Dispatch patterns:
-
-### AI Domain
-- LLM integration (OpenAI, Anthropic)
-- Travel recommendations
-- Chat interface
-
-### Auth Domain
-- User registration/login
-- JWT authentication
-- User management
-
-### Plan Domain
-- Travel plan CRUD
-- Itinerary management
-- User plans relationship
-
-## TODO
-
-- [ ] Implement actual LLM integration
-- [ ] Add database migrations (Alembic)
-- [ ] Implement authentication logic
-- [ ] Add tests
-- [ ] Frontend integration
+MIT License

@@ -35,4 +35,8 @@ export {
   Loader2,
   Sparkles,
   TrendingUp,
+  Send,
+  MessageCircle,
+  List,
+  MoreVertical,
 } from 'lucide-react-native';

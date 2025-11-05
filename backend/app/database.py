@@ -1,49 +1,38 @@
-"""Database models and configuration."""
+"""Database configuration and session management."""
 
-from datetime import datetime
-
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import sessionmaker
 
+from app.config import settings
+
+# SQLAlchemy Base
 Base = declarative_base()
 
+# Database engine
+engine = create_engine(
+    settings.DATABASE_URL,
+    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
+)
 
-class User(Base):
-    """User model."""
-
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    full_name = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Relationships
-    plans = relationship("TravelPlan", back_populates="user")
+# Session factory
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-class TravelPlan(Base):
-    """Travel plan model."""
+def get_db():
+    """Get database session dependency."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-    __tablename__ = "travel_plans"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    title = Column(String, nullable=False)
-    description = Column(Text)
+def create_tables():
+    """Create all database tables."""
+    # Import all models to register them with Base
+    from app.auth.models import User  # noqa
+    from app.plan.models import TravelPlan  # noqa
+    from app.ai.models import Conversation, Message  # noqa
 
-    # AI generated content
-    itinerary = Column(JSON)
-    recommendations = Column(JSON)
-
-    # Metadata
-    start_date = Column(DateTime)
-    end_date = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Relationships
-    user = relationship("User", back_populates="plans")
+    Base.metadata.create_all(bind=engine)

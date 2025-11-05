@@ -1,10 +1,106 @@
 """AI domain schemas."""
 
-from typing import List, Optional
+from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
 
+# Message schemas
+class MessageBase(BaseModel):
+    """Base message schema."""
+
+    role: str
+    content: str
+
+
+class MessageCreate(MessageBase):
+    """Message creation schema."""
+
+    conversation_id: int
+
+
+class MessageResponse(MessageBase):
+    """Message response schema."""
+
+    id: int
+    conversation_id: int
+    model: Optional[str] = None
+    tokens_used: Optional[int] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Conversation schemas
+class ConversationCreate(BaseModel):
+    """Conversation creation schema."""
+
+    initial_message: str
+    title: Optional[str] = None
+
+
+class ConversationResponse(BaseModel):
+    """Conversation response schema."""
+
+    id: int
+    user_id: int
+    title: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    messages: list[MessageResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationListResponse(BaseModel):
+    """Conversation list item schema."""
+
+    id: int
+    title: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    message_count: int
+
+    class Config:
+        from_attributes = True
+
+
+# Chat schemas
+class ChatRequest(BaseModel):
+    """Chat request schema."""
+
+    content: str
+
+
+class ChatResponse(BaseModel):
+    """Chat response schema."""
+
+    message: str
+    conversation_id: int
+    message_id: int
+
+
+# Travel plan generation
+class GeneratePlanRequest(BaseModel):
+    """Generate travel plan from conversation."""
+
+    conversation_id: int
+
+
+class GeneratePlanResponse(BaseModel):
+    """Generated travel plan response."""
+
+    plan_id: int
+    title: str
+    itinerary: dict
+
+
+# Legacy schemas (for backward compatibility)
 class ChatMessage(BaseModel):
     """Chat message."""
 
@@ -12,24 +108,24 @@ class ChatMessage(BaseModel):
     content: str
 
 
-class ChatRequest(BaseModel):
-    """Chat request."""
+class ChatRequestLegacy(BaseModel):
+    """Legacy chat request."""
 
-    messages: List[ChatMessage]
+    messages: list[ChatMessage]
     context: Optional[dict] = None
 
 
-class ChatResponse(BaseModel):
-    """Chat response."""
+class ChatResponseLegacy(BaseModel):
+    """Legacy chat response."""
 
     message: str
-    suggestions: Optional[List[str]] = None
+    suggestions: Optional[list[str]] = None
 
 
 class RecommendationRequest(BaseModel):
     """Travel recommendation request."""
 
-    interests: List[str]
+    interests: list[str]
     duration_days: int
     budget_level: str = "medium"  # low, medium, high
 
@@ -37,6 +133,6 @@ class RecommendationRequest(BaseModel):
 class RecommendationResponse(BaseModel):
     """Travel recommendation response."""
 
-    places: List[dict]
-    restaurants: List[dict]
-    activities: List[dict]
+    places: list[dict]
+    restaurants: list[dict]
+    activities: list[dict]
