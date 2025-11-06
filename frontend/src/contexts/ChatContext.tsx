@@ -3,7 +3,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { Conversation, Message, ConversationListItem } from '@/types/chat';
+import type { Conversation, Message, ConversationListItem } from '@/types';
 
 export interface ChatState {
   conversations: ConversationListItem[];
@@ -39,7 +39,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   const appendStreamingToken = useCallback((token: string) => {
-    setStreamingMessage((prev) => prev + token);
+    setStreamingMessage((prev: string) => prev + token);
   }, []);
 
   const resetStreamingMessage = useCallback(() => {

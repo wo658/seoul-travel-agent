@@ -15,6 +15,7 @@ import { Text, Button, buttonTextVariants } from '@/components/ui';
 import { MessageBubble, MessageInput, StreamingIndicator } from '@/components/chat';
 import { useChat } from '@/hooks/useChat';
 import { ArrowLeft, Sparkles } from '@/lib/icons';
+import type { Message } from '@/types';
 
 export interface ChatScreenProps {
   conversationId?: string;
@@ -54,7 +55,7 @@ export function ChatScreen({
 
   const handleGeneratePlan = async () => {
     const plan = await createTravelPlan();
-    if (plan && onPlanGenerated) {
+    if (plan && onPlanGenerated && 'plan_id' in plan) {
       onPlanGenerated(plan.plan_id);
     }
   };
@@ -145,7 +146,7 @@ export function ChatScreen({
             </View>
           )}
 
-          {messages.map((message) => (
+          {messages.map((message: Message) => (
             <MessageBubble
               key={message.id}
               role={message.role}

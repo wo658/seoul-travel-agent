@@ -10,9 +10,9 @@ import {
   getConversations,
   streamChatMessage,
   sendMessage,
-  generatePlan,
+  generatePlanFromConversation,
 } from '@/services/api/chat';
-import type { Message } from '@/types/chat';
+import type { Message } from '@/types';
 
 export interface UseChatOptions {
   conversationId?: string;
@@ -183,7 +183,7 @@ export function useChat(options: UseChatOptions = {}) {
     try {
       setIsLoading(true);
       clearError();
-      const plan = await generatePlan(currentConversation.id);
+      const plan = await generatePlanFromConversation(currentConversation.id);
       return plan;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to generate plan';

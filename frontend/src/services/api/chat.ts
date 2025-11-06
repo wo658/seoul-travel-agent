@@ -12,7 +12,11 @@ import type {
   GeneratePlanRequest,
   GeneratePlanResponse,
   ConversationListItem,
-} from '@/types/chat';
+  GeneratePlanApiRequest,
+  GeneratePlanApiResponse,
+  ModifyPlanRequest,
+  ModifyPlanResponse,
+} from '@/types';
 
 // TODO: Replace with actual backend URL from environment
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
@@ -147,9 +151,9 @@ export async function sendMessage(
 }
 
 /**
- * Generate travel plan from conversation
+ * Generate travel plan from conversation (legacy)
  */
-export async function generatePlan(
+export async function generatePlanFromConversation(
   conversationId: string,
   data?: GeneratePlanRequest
 ): Promise<GeneratePlanResponse> {
@@ -166,6 +170,50 @@ export async function generatePlan(
 
   if (!response.ok) {
     throw new Error(`Failed to generate plan: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Generate travel plan directly from form data
+ */
+export async function generatePlan(
+  data: GeneratePlanApiRequest
+): Promise<GeneratePlanApiResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/ai/plans/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to generate plan: ${errorText || response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Modify existing travel plan with user feedback
+ */
+export async function modifyPlan(
+  data: ModifyPlanRequest
+): Promise<ModifyPlanResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/ai/plans/review`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to modify plan: ${errorText || response.statusText}`);
   }
 
   return response.json();

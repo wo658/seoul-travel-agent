@@ -22,6 +22,9 @@ export {
 export { Input, type InputProps } from './input';
 export { Text } from './text';
 export { Separator } from './separator';
+export { Chip, chipTextVariants, chipVariants, type ChipProps } from './chip';
+export { Badge, badgeTextVariants, badgeVariants, type BadgeProps } from './badge';
+export { TextArea, type TextAreaProps } from './textarea';
 
 // Re-export chat components for convenience
 export * from '../chat';

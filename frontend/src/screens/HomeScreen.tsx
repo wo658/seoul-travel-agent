@@ -18,10 +18,11 @@ import { MapPin, Calendar, Sparkles, Clock, TrendingUp, Loader2 } from '@/lib/ic
 
 export interface HomeScreenProps {
   onStartChat?: () => void;
+  onStartPlanning?: () => void;
   onViewConversations?: () => void;
 }
 
-export function HomeScreen({ onStartChat, onViewConversations }: HomeScreenProps) {
+export function HomeScreen({ onStartChat, onStartPlanning, onViewConversations }: HomeScreenProps) {
   const [destination, setDestination] = useState('');
   const [duration, setDuration] = useState('');
 
@@ -51,22 +52,23 @@ export function HomeScreen({ onStartChat, onViewConversations }: HomeScreenProps
                 AI 기반 서울 여행 플래너로 완벽한 여행을 계획하세요
               </CardDescription>
             </CardHeader>
-            <CardContent className="gap-4">
-              <Input
-                placeholder="여행 목적지를 입력하세요..."
-                value={destination}
-                onChangeText={setDestination}
-              />
-              <Input
-                placeholder="여행 기간을 입력하세요..."
-                value={duration}
-                onChangeText={setDuration}
-              />
+            <CardContent className="gap-3">
+              <Button size="lg" onPress={onStartPlanning}>
+                <View className="flex-row items-center gap-2">
+                  <Calendar className="text-primary-foreground" size={20} />
+                  <Text className={buttonTextVariants({ variant: 'default', size: 'lg' })}>
+                    여행 계획 만들기
+                  </Text>
+                </View>
+              </Button>
+              <Text className="text-xs text-center text-muted-foreground">
+                날짜, 예산, 관심사를 입력하여 맞춤 계획을 생성하세요
+              </Text>
             </CardContent>
             <CardFooter className="gap-2">
-              <Button className="flex-1" onPress={onStartChat}>
-                <Text className={buttonTextVariants({ variant: 'default' })}>
-                  새 대화 시작
+              <Button variant="outline" className="flex-1" onPress={onStartChat}>
+                <Text className={buttonTextVariants({ variant: 'outline' })}>
+                  채팅으로 시작
                 </Text>
               </Button>
               <Button variant="outline" className="flex-1" onPress={onViewConversations}>
