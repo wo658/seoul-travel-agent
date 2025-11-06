@@ -1,29 +1,31 @@
-"""Venue service with vector similarity search."""
+"""Venue service with ChromaDB vector similarity search."""
 
 import logging
 from typing import List, Optional, Tuple
 
-from pgvector.sqlalchemy import cosine_distance
-from sqlalchemy import desc, func, select
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.venue.embedding_service import EmbeddingService
 from app.venue.models import Venue
+from app.venue.vector_store import VenueVectorStore
 
 logger = logging.getLogger(__name__)
 
 
 class VenueService:
-    """Service for venue operations including vector similarity search."""
+    """Service for venue operations including ChromaDB vector similarity search."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, chroma_persist_dir: str = "./chroma_db"):
         """Initialize venue service.
 
         Args:
             db: Database session
+            chroma_persist_dir: Directory for ChromaDB persistence
         """
         self.db = db
         self.embedding_service = EmbeddingService()
+        self.vector_store = VenueVectorStore(persist_directory=chroma_persist_dir)
 
     async def search_venues_vector(
         self,
@@ -33,7 +35,7 @@ class VenueService:
         limit: int = 20,
         similarity_threshold: float = 0.7,
     ) -> List[Tuple[Venue, float]]:
-        """Perform vector similarity search on venues.
+        """Perform vector similarity search on venues using ChromaDB.
 
         Args:
             query: Natural language search query
@@ -46,42 +48,54 @@ class VenueService:
             List of tuples (Venue, similarity_score) sorted by similarity (descending)
 
         Raises:
-            Exception: If embedding generation or database query fails
+            Exception: If embedding generation or search fails
         """
         # Generate query embedding
         logger.info(f"Generating embedding for query: {query}")
         query_embedding = await self.embedding_service.generate_query_embedding(query)
 
-        # Calculate cosine similarity (1 - cosine_distance)
-        similarity_expr = 1 - cosine_distance(Venue.description_embedding, query_embedding)
+        # Build ChromaDB where filter
+        where_filter = {}
+        if category:
+            where_filter["category"] = category
 
-        # Build query with filters
-        stmt = (
-            select(Venue, similarity_expr.label("similarity"))
-            .filter(Venue.business_status == "영업중")
-            .filter(similarity_expr > similarity_threshold)
+        # Search in ChromaDB
+        venue_ids, similarities, metadatas = self.vector_store.search_similar_venues(
+            query_embedding=query_embedding,
+            n_results=limit * 2,  # Get more results to filter by similarity threshold
+            where=where_filter if where_filter else None,
         )
 
-        # Apply category filter
-        if category:
-            stmt = stmt.filter(Venue.category == category)
+        # Filter by similarity threshold and location
+        filtered_results = []
+        for venue_id, similarity in zip(venue_ids, similarities):
+            if similarity < similarity_threshold:
+                continue
 
-        # Apply location filter (searches in new_address)
-        if location:
-            stmt = stmt.filter(Venue.new_address.contains(location))
+            # Get full venue from database
+            venue = self.db.query(Venue).filter(Venue.id == venue_id).first()
 
-        # Order by similarity and limit results
-        stmt = stmt.order_by(desc("similarity")).limit(limit)
+            if not venue:
+                continue
 
-        # Execute query
-        result = self.db.execute(stmt)
-        venues_with_scores = [(row.Venue, row.similarity) for row in result]
+            # Filter by location if specified
+            if location and venue.new_address and location not in venue.new_address:
+                continue
+
+            # Filter by business status
+            if venue.business_status != "영업중":
+                continue
+
+            filtered_results.append((venue, similarity))
+
+            if len(filtered_results) >= limit:
+                break
 
         logger.info(
-            f"Found {len(venues_with_scores)} venues with similarity > {similarity_threshold}"
+            f"Found {len(filtered_results)} venues with similarity > {similarity_threshold}"
         )
 
-        return venues_with_scores
+        return filtered_results
 
     def format_venues_for_llm(
         self, venues_with_scores: List[Tuple[Venue, float]]

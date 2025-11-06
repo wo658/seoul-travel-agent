@@ -1,20 +1,19 @@
-"""Venue database models with vector embedding support."""
+"""Venue database models for Seoul Open API integration."""
 
 from datetime import datetime
 from typing import Any, Dict
 
-from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, DateTime, Float, Index, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.dialects.sqlite import JSON
 
 from app.database import Base
 
 
 class Venue(Base):
-    """Venue model for tourism locations with vector search support.
+    """Venue model for tourism locations.
 
     Supports attractions, restaurants, accommodations, and natural sites
-    from Seoul Open API with semantic search via pgvector embeddings.
+    from Seoul Open API. Vector embeddings are stored in ChromaDB separately.
     """
 
     __tablename__ = "venues"
@@ -61,25 +60,14 @@ class Venue(Base):
     # - attraction: {"tags": "...", "accessibility": "..."}
     extra_info = Column(JSON)
 
-    # Vector embedding for semantic search (OpenAI text-embedding-3-small dimension=1536)
-    description_embedding = Column(Vector(1536))
-
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
-    # Indexes for vector similarity search
-    __table_args__ = (
-        Index(
-            "idx_description_embedding",
-            "description_embedding",
-            postgresql_using="ivfflat",
-            postgresql_with={"lists": 100},
-        ),
-        Index("idx_category_status", "category", "business_status"),
-    )
+    # Indexes
+    __table_args__ = (Index("idx_category_status", "category", "business_status"),)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert venue to dictionary representation."""

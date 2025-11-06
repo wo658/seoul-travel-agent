@@ -34,5 +34,6 @@ def create_tables():
     from app.auth.models import User  # noqa
     from app.plan.models import TravelPlan  # noqa
     from app.ai.models import Conversation, Message  # noqa
+    from app.venue.models import Venue  # noqa
 
     Base.metadata.create_all(bind=engine)

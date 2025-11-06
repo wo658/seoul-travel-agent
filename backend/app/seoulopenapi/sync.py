@@ -1,4 +1,4 @@
-"""Data synchronization script for Seoul Open API to database."""
+"""Data synchronization script for Seoul Open API to database with ChromaDB."""
 
 import asyncio
 import logging
@@ -11,24 +11,27 @@ from app.database import SessionLocal
 from app.seoulopenapi.client import SeoulOpenAPIClient
 from app.venue.embedding_service import EmbeddingService
 from app.venue.models import Venue
+from app.venue.vector_store import VenueVectorStore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class VenueSyncService:
-    """Service for synchronizing venue data from Seoul Open API."""
+    """Service for synchronizing venue data from Seoul Open API with ChromaDB."""
 
-    def __init__(self, db: Session, api_key: str):
+    def __init__(self, db: Session, api_key: str, chroma_persist_dir: str = "./chroma_db"):
         """Initialize sync service.
 
         Args:
             db: Database session
             api_key: Seoul Open API key
+            chroma_persist_dir: ChromaDB persistence directory
         """
         self.db = db
         self.api_client = SeoulOpenAPIClient(api_key)
         self.embedding_service = EmbeddingService()
+        self.vector_store = VenueVectorStore(persist_directory=chroma_persist_dir)
 
     def _convert_nature_to_venue(self, data: Dict[str, Any]) -> Venue:
         """Convert nature API data to Venue model."""
@@ -117,7 +120,7 @@ class VenueSyncService:
     async def sync_venues_with_embeddings(
         self, max_records_per_category: int = 100
     ) -> Dict[str, int]:
-        """Sync all venues from Seoul Open API with embedding generation.
+        """Sync all venues from Seoul Open API with ChromaDB embeddings.
 
         Args:
             max_records_per_category: Maximum records to fetch per category
@@ -210,13 +213,13 @@ class VenueSyncService:
                 descriptions
             )
 
-            # Assign embeddings to venues
-            for venue, embedding in zip(venues, embeddings):
-                venue.description_embedding = embedding
-
-            # Save to database
+            # Save to database first to get IDs
             logger.info("Saving venues to database...")
-            for venue in venues:
+            venue_ids = []
+            external_ids = []
+            metadatas = []
+
+            for venue, embedding in zip(venues, embeddings):
                 # Check if venue already exists
                 existing = (
                     self.db.query(Venue)
@@ -229,11 +232,34 @@ class VenueSyncService:
                     for key, value in venue.__dict__.items():
                         if key != "_sa_instance_state" and key != "id":
                             setattr(existing, key, value)
+                    self.db.flush()
+                    venue_id = existing.id
                 else:
                     # Add new venue
                     self.db.add(venue)
+                    self.db.flush()
+                    venue_id = venue.id
+
+                # Collect data for ChromaDB
+                venue_ids.append(venue_id)
+                external_ids.append(venue.external_id)
+                metadatas.append({
+                    "name": venue.name,
+                    "category": venue.category,
+                    "address": venue.new_address or venue.address or "",
+                })
 
             self.db.commit()
+
+            # Store embeddings in ChromaDB
+            logger.info("Storing embeddings in ChromaDB...")
+            self.vector_store.add_venue_embeddings_batch(
+                venue_ids=venue_ids,
+                external_ids=external_ids,
+                embeddings=embeddings,
+                metadatas=metadatas,
+            )
+
             stats["total"] = len(venues)
 
             logger.info(f"Sync completed! Stats: {stats}")
