@@ -28,57 +28,15 @@ class EmbeddingService:
     def format_venue_description(self, venue: Venue) -> str:
         """Format venue information into a comprehensive description for embedding.
 
+        Delegates to Venue.get_embedding_description() to avoid duplication.
+
         Args:
             venue: Venue object to format
 
         Returns:
             Formatted description string
         """
-        description_parts = [
-            f"이름: {venue.name}",
-            f"카테고리: {venue.category}",
-        ]
-
-        if venue.new_address:
-            description_parts.append(f"주소: {venue.new_address}")
-        elif venue.address:
-            description_parts.append(f"주소: {venue.address}")
-
-        if venue.subway_info:
-            description_parts.append(f"교통: {venue.subway_info}")
-
-        # Add category-specific information
-        if venue.extra_info:
-            if venue.category == "restaurant":
-                menu = venue.extra_info.get("representative_menu")
-                if menu:
-                    description_parts.append(f"대표메뉴: {menu}")
-
-            elif venue.category == "attraction":
-                tags = venue.extra_info.get("tags")
-                if tags:
-                    description_parts.append(f"특징: {tags}")
-                accessibility = venue.extra_info.get("accessibility")
-                if accessibility:
-                    description_parts.append(f"편의시설: {accessibility}")
-
-            elif venue.category == "accommodation":
-                acc_type = venue.extra_info.get("accommodation_type")
-                if acc_type:
-                    description_parts.append(f"숙박유형: {acc_type}")
-                facilities = venue.extra_info.get("facilities")
-                if facilities:
-                    description_parts.append(f"시설: {facilities}")
-
-            elif venue.category == "nature":
-                tags = venue.extra_info.get("tags")
-                if tags:
-                    description_parts.append(f"특징: {tags}")
-
-        if venue.operating_hours:
-            description_parts.append(f"운영시간: {venue.operating_hours}")
-
-        return " | ".join(description_parts)
+        return venue.get_embedding_description()
 
     async def generate_venue_embedding(self, venue: Venue) -> List[float]:
         """Generate embedding for a single venue.

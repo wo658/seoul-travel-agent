@@ -20,6 +20,83 @@ logger = logging.getLogger(__name__)
 class VenueSyncService:
     """Service for synchronizing venue data from Seoul Open API with ChromaDB."""
 
+    # Category mapping configuration
+    CATEGORY_MAPPINGS = {
+        "nature": {
+            "id_field": "POST_SN",
+            "name_field": "POST_SJ",
+            "common_fields": {
+                "address": "ADDRESS",
+                "new_address": "NEW_ADDRESS",
+                "phone": "CMMN_TELNO",
+                "website": "CMMN_HMPG_URL",
+                "operating_hours": "CMMN_USE_TIME",
+                "subway_info": "SUBWAY_INFO",
+                "x_coord": "X_COORD",
+                "y_coord": "Y_COORD",
+            },
+            "extra_fields": {
+                "introduction": "CMMN_INTRCN_CN",
+            },
+            "business_status": "영업중",
+        },
+        "restaurant": {
+            "id_field": "POST_SN",
+            "name_field": "POST_SJ",
+            "common_fields": {
+                "address": "ADDRESS",
+                "new_address": "NEW_ADDRESS",
+                "phone": "CMMN_TELNO",
+                "website": "CMMN_HMPG_URL",
+                "operating_hours": "CMMN_USE_TIME",
+                "subway_info": "SUBWAY_INFO",
+                "x_coord": "X_COORD",
+                "y_coord": "Y_COORD",
+            },
+            "extra_fields": {
+                "representative_menu": "FD_REPRSNT_MENU",
+            },
+            "business_status": "영업중",
+        },
+        "attraction": {
+            "id_field": "POST_SN",
+            "name_field": "POST_SJ",
+            "common_fields": {
+                "address": "ADDRESS",
+                "new_address": "NEW_ADDRESS",
+                "phone": "CMMN_TELNO",
+                "website": "CMMN_HMPG_URL",
+                "operating_hours": "CMMN_USE_TIME",
+                "subway_info": "SUBWAY_INFO",
+                "x_coord": "X_COORD",
+                "y_coord": "Y_COORD",
+            },
+            "extra_fields": {
+                "introduction": "CMMN_INTRCN_CN",
+                "tags": "TAG",
+                "accessibility": "BF_DESC",
+            },
+            "business_status": "영업중",
+        },
+        "accommodation": {
+            "id_field": "MGTNO",
+            "name_field": "BPLCNM",
+            "common_fields": {
+                "address": "SITEWHLADDR",
+                "new_address": "RDNWHLADDR",
+                "phone": "SITETEL",
+                "x_coord": "X",
+                "y_coord": "Y",
+            },
+            "extra_fields": {
+                "room_count": "STROOMCNT",
+                "facilities": "AFC",
+                "accommodation_type": "TRSTLODGCLNM",
+            },
+            "business_status_field": "TRDSTATENM",
+        },
+    }
+
     def __init__(self, db: Session, api_key: str, chroma_persist_dir: str = "./chroma_db"):
         """Initialize sync service.
 
@@ -33,89 +110,45 @@ class VenueSyncService:
         self.embedding_service = EmbeddingService()
         self.vector_store = VenueVectorStore(persist_directory=chroma_persist_dir)
 
-    def _convert_nature_to_venue(self, data: Dict[str, Any]) -> Venue:
-        """Convert nature API data to Venue model."""
-        return Venue(
-            external_id=f"nature_{data['POST_SN']}",
-            name=data["POST_SJ"],
-            category="nature",
-            address=data.get("ADDRESS"),
-            new_address=data.get("NEW_ADDRESS"),
-            phone=data.get("CMMN_TELNO"),
-            website=data.get("CMMN_HMPG_URL"),
-            operating_hours=data.get("CMMN_USE_TIME"),
-            subway_info=data.get("SUBWAY_INFO"),
-            x_coord=data.get("X_COORD"),
-            y_coord=data.get("Y_COORD"),
-            business_status="영업중",  # Assume active if in API
-            extra_info={
-                "introduction": data.get("CMMN_INTRCN_CN"),
-            },
-        )
+    def _convert_to_venue(self, category: str, data: Dict[str, Any]) -> Venue:
+        """Convert API data to Venue model using category mapping.
 
-    def _convert_restaurant_to_venue(self, data: Dict[str, Any]) -> Venue:
-        """Convert restaurant API data to Venue model."""
-        return Venue(
-            external_id=f"restaurant_{data['POST_SN']}",
-            name=data["POST_SJ"],
-            category="restaurant",
-            address=data.get("ADDRESS"),
-            new_address=data.get("NEW_ADDRESS"),
-            phone=data.get("CMMN_TELNO"),
-            website=data.get("CMMN_HMPG_URL"),
-            operating_hours=data.get("CMMN_USE_TIME"),
-            subway_info=data.get("SUBWAY_INFO"),
-            x_coord=data.get("X_COORD"),
-            y_coord=data.get("Y_COORD"),
-            business_status="영업중",
-            extra_info={
-                "representative_menu": data.get("FD_REPRSNT_MENU"),
-            },
-        )
+        Args:
+            category: Venue category (nature, restaurant, attraction, accommodation)
+            data: Raw API data
 
-    def _convert_attraction_to_venue(self, data: Dict[str, Any]) -> Venue:
-        """Convert attraction API data to Venue model."""
-        return Venue(
-            external_id=f"attraction_{data['POST_SN']}",
-            name=data["POST_SJ"],
-            category="attraction",
-            address=data.get("ADDRESS"),
-            new_address=data.get("NEW_ADDRESS"),
-            phone=data.get("CMMN_TELNO"),
-            website=data.get("CMMN_HMPG_URL"),
-            operating_hours=data.get("CMMN_USE_TIME"),
-            subway_info=data.get("SUBWAY_INFO"),
-            x_coord=data.get("X_COORD"),
-            y_coord=data.get("Y_COORD"),
-            business_status="영업중",
-            extra_info={
-                "introduction": data.get("CMMN_INTRCN_CN"),
-                "tags": data.get("TAG"),
-                "accessibility": data.get("BF_DESC"),
-            },
-        )
+        Returns:
+            Venue object
+        """
+        mapping = self.CATEGORY_MAPPINGS[category]
 
-    def _convert_accommodation_to_venue(self, data: Dict[str, Any]) -> Venue:
-        """Convert accommodation API data to Venue model."""
-        # Filter by business status
-        business_status = data.get("TRDSTATENM", "")
+        # Build common fields
+        venue_data = {
+            "external_id": f"{category}_{data[mapping['id_field']]}",
+            "name": data[mapping["name_field"]],
+            "category": category,
+        }
 
-        return Venue(
-            external_id=f"accommodation_{data['MGTNO']}",
-            name=data["BPLCNM"],
-            category="accommodation",
-            address=data.get("SITEWHLADDR"),
-            new_address=data.get("RDNWHLADDR"),
-            phone=data.get("SITETEL"),
-            x_coord=data.get("X"),
-            y_coord=data.get("Y"),
-            business_status=business_status,
-            extra_info={
-                "room_count": data.get("STROOMCNT"),
-                "facilities": data.get("AFC"),
-                "accommodation_type": data.get("TRSTLODGCLNM"),
-            },
-        )
+        # Map common fields
+        for venue_field, api_field in mapping["common_fields"].items():
+            venue_data[venue_field] = data.get(api_field)
+
+        # Handle business status
+        if "business_status_field" in mapping:
+            venue_data["business_status"] = data.get(mapping["business_status_field"], "")
+        else:
+            venue_data["business_status"] = mapping["business_status"]
+
+        # Build extra_info
+        extra_info = {}
+        for extra_field, api_field in mapping["extra_fields"].items():
+            value = data.get(api_field)
+            if value is not None:
+                extra_info[extra_field] = value
+
+        venue_data["extra_info"] = extra_info
+
+        return Venue(**venue_data)
 
     async def sync_venues_with_embeddings(
         self, max_records_per_category: int = 100
@@ -159,46 +192,31 @@ class VenueSyncService:
                 max_records=max_records_per_category
             )
 
-            # Convert to Venue objects
+            # Convert to Venue objects using unified converter
             venues: List[Venue] = []
 
-            for data in nature_data:
-                try:
-                    venue = self._convert_nature_to_venue(data)
-                    venues.append(venue)
-                    stats["nature"] += 1
-                except Exception as e:
-                    logger.error(f"Error converting nature data: {e}")
-                    stats["errors"] += 1
+            # Process each category
+            categories_data = [
+                ("nature", nature_data),
+                ("restaurant", restaurant_data),
+                ("attraction", attraction_data),
+                ("accommodation", accommodation_data),
+            ]
 
-            for data in restaurant_data:
-                try:
-                    venue = self._convert_restaurant_to_venue(data)
-                    venues.append(venue)
-                    stats["restaurant"] += 1
-                except Exception as e:
-                    logger.error(f"Error converting restaurant data: {e}")
-                    stats["errors"] += 1
+            for category, data_list in categories_data:
+                for data in data_list:
+                    try:
+                        venue = self._convert_to_venue(category, data)
 
-            for data in attraction_data:
-                try:
-                    venue = self._convert_attraction_to_venue(data)
-                    venues.append(venue)
-                    stats["attraction"] += 1
-                except Exception as e:
-                    logger.error(f"Error converting attraction data: {e}")
-                    stats["errors"] += 1
+                        # Filter accommodations by business status
+                        if category == "accommodation" and venue.business_status != "영업중":
+                            continue
 
-            for data in accommodation_data:
-                try:
-                    venue = self._convert_accommodation_to_venue(data)
-                    # Only include active accommodations
-                    if venue.business_status == "영업중":
                         venues.append(venue)
-                        stats["accommodation"] += 1
-                except Exception as e:
-                    logger.error(f"Error converting accommodation data: {e}")
-                    stats["errors"] += 1
+                        stats[category] += 1
+                    except Exception as e:
+                        logger.error(f"Error converting {category} data: {e}")
+                        stats["errors"] += 1
 
             logger.info(f"Total venues to process: {len(venues)}")
 

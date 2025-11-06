@@ -66,30 +66,44 @@ class VenueService:
             where=where_filter if where_filter else None,
         )
 
-        # Filter by similarity threshold and location
-        filtered_results = []
-        for venue_id, similarity in zip(venue_ids, similarities):
-            if similarity < similarity_threshold:
-                continue
+        # Filter by similarity threshold
+        filtered_ids = [
+            (vid, sim)
+            for vid, sim in zip(venue_ids, similarities)
+            if sim >= similarity_threshold
+        ]
 
-            # Get full venue from database
-            venue = self.db.query(Venue).filter(Venue.id == venue_id).first()
+        if not filtered_ids:
+            logger.info("No venues found above similarity threshold")
+            return []
 
-            if not venue:
-                continue
+        # Extract venue IDs and create similarity map
+        venue_ids_to_fetch = [vid for vid, _ in filtered_ids]
+        similarity_map = {vid: sim for vid, sim in filtered_ids}
 
-            # Filter by location if specified
-            if location and venue.new_address and location not in venue.new_address:
-                continue
+        # Build optimized DB query with filters
+        query = self.db.query(Venue).filter(
+            Venue.id.in_(venue_ids_to_fetch),
+            Venue.business_status == "영업중",
+        )
 
-            # Filter by business status
-            if venue.business_status != "영업중":
-                continue
+        # Add location filter if specified
+        if location:
+            query = query.filter(Venue.new_address.contains(location))
 
-            filtered_results.append((venue, similarity))
+        # Fetch venues in single query
+        venues = query.all()
 
-            if len(filtered_results) >= limit:
-                break
+        # Combine venues with similarity scores and sort by similarity
+        results = [
+            (venue, similarity_map[venue.id])
+            for venue in venues
+            if venue.id in similarity_map
+        ]
+        results.sort(key=lambda x: x[1], reverse=True)
+
+        # Limit final results
+        filtered_results = results[:limit]
 
         logger.info(
             f"Found {len(filtered_results)} venues with similarity > {similarity_threshold}"
@@ -102,6 +116,8 @@ class VenueService:
     ) -> str:
         """Format venue list into concise text for LLM context.
 
+        Delegates to Venue.get_llm_summary() to avoid duplication.
+
         Args:
             venues_with_scores: List of (Venue, similarity_score) tuples
 
@@ -111,67 +127,9 @@ class VenueService:
         if not venues_with_scores:
             return "검색 결과가 없습니다."
 
-        formatted = []
-
-        for venue, similarity in venues_with_scores:
-            info_parts = [f"- {venue.name} (관련도: {similarity:.2f})"]
-
-            # Add category-specific information
-            if venue.category == "restaurant":
-                if venue.extra_info and "representative_menu" in venue.extra_info:
-                    menu = venue.extra_info["representative_menu"]
-                    info_parts.append(f"대표메뉴: {menu}")
-                else:
-                    info_parts.append("음식점")
-
-            elif venue.category == "accommodation":
-                if venue.extra_info:
-                    room_count = venue.extra_info.get("room_count")
-                    acc_type = venue.extra_info.get("accommodation_type")
-                    facilities = venue.extra_info.get("facilities")
-
-                    acc_info = []
-                    if acc_type:
-                        acc_info.append(acc_type)
-                    if room_count:
-                        acc_info.append(f"객실 {room_count}개")
-                    if facilities:
-                        acc_info.append(f"시설: {facilities}")
-
-                    if acc_info:
-                        info_parts.append(", ".join(acc_info))
-                    else:
-                        info_parts.append("숙박시설")
-                else:
-                    info_parts.append("숙박시설")
-
-            elif venue.category == "attraction":
-                if venue.extra_info and "tags" in venue.extra_info:
-                    tags = venue.extra_info["tags"]
-                    info_parts.append(f"특징: {tags}")
-                else:
-                    info_parts.append("관광명소")
-
-            elif venue.category == "nature":
-                if venue.extra_info and "tags" in venue.extra_info:
-                    tags = venue.extra_info["tags"]
-                    info_parts.append(f"특징: {tags}")
-                else:
-                    info_parts.append("자연명소")
-
-            # Add location and transportation info
-            if venue.subway_info:
-                info_parts.append(f"교통: {venue.subway_info}")
-
-            if venue.operating_hours:
-                info_parts.append(f"운영: {venue.operating_hours}")
-
-            if venue.phone:
-                info_parts.append(f"전화: {venue.phone}")
-
-            formatted.append(" | ".join(info_parts))
-
-        return "\n".join(formatted)
+        return "\n".join(
+            venue.get_llm_summary(similarity) for venue, similarity in venues_with_scores
+        )
 
     def get_venue_by_id(self, venue_id: int) -> Optional[Venue]:
         """Get venue by ID.
