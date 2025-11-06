@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     # AI/LLM
     OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"  # Default model for all LLM calls
     ANTHROPIC_API_KEY: str = ""
 
     # Seoul Open API

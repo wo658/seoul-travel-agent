@@ -4,20 +4,10 @@ import json
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
 
 from app.ai.agents.reviewer.prompts import MODIFY_PLAN_PROMPT, PARSE_FEEDBACK_PROMPT
 from app.ai.agents.reviewer.state import ReviewState
-from app.config import settings
-
-
-def get_llm(temperature: float = 0, model: str = "gpt-4o") -> ChatOpenAI:
-    """Get LLM instance."""
-    return ChatOpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        model=model,
-        temperature=temperature,
-    )
+from app.ai.agents.utils import get_llm
 
 
 async def parse_feedback(state: ReviewState) -> dict[str, Any]:

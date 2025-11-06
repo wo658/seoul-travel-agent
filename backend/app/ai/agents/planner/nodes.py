@@ -4,7 +4,6 @@ import json
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
 
 from app.ai.agents.planner.prompts import (
     COLLECT_INFO_PROMPT,
@@ -12,16 +11,7 @@ from app.ai.agents.planner.prompts import (
     VALIDATE_PLAN_PROMPT,
 )
 from app.ai.agents.planner.state import PlanningState
-from app.config import settings
-
-
-def get_llm(temperature: float = 0.7, model: str = "gpt-4o") -> ChatOpenAI:
-    """Get LLM instance."""
-    return ChatOpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        model=model,
-        temperature=temperature,
-    )
+from app.ai.agents.utils import get_llm
 
 
 async def collect_info(state: PlanningState) -> dict[str, Any]:
@@ -76,7 +66,7 @@ async def fetch_venues(state: PlanningState) -> dict[str, Any]:
 
 async def generate_plan(state: PlanningState) -> dict[str, Any]:
     """Generate travel plan using LLM."""
-    llm = get_llm(temperature=0.5, model="gpt-4o")
+    llm = get_llm(temperature=0.5)
 
     prompt = GENERATE_PLAN_PROMPT.format(
         user_request=state["user_request"],
