@@ -15,7 +15,9 @@ class TravelPlan(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=True)
+    # TODO: Restore when Conversation model is implemented
+    # conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=True)
+    conversation_id = Column(Integer, nullable=True)
     title = Column(String, nullable=False)
     description = Column(Text)
 
@@ -31,9 +33,10 @@ class TravelPlan(Base):
 
     # Relationships
     user = relationship("User", back_populates="plans")
-    conversation = relationship(
-        "Conversation",
-        back_populates="travel_plan",
-        foreign_keys="[TravelPlan.conversation_id]",
-        uselist=False,
-    )
+    # TODO: Restore when Conversation model is implemented
+    # conversation = relationship(
+    #     "Conversation",
+    #     back_populates="travel_plan",
+    #     foreign_keys="[TravelPlan.conversation_id]",
+    #     uselist=False,
+    # )
