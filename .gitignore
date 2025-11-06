@@ -89,3 +89,4 @@ docker-compose.override.yml
 
 # mcp
 .mcp.json
+backend/chroma_db/

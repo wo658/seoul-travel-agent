@@ -220,16 +220,26 @@ class VenueSyncService:
 
             logger.info(f"Total venues to process: {len(venues)}")
 
-            # Generate embeddings in batch
-            logger.info("Generating embeddings...")
-            descriptions = [
-                self.embedding_service.format_venue_description(venue)
-                for venue in venues
-            ]
+            # Generate embeddings in smaller batches to avoid API limits
+            logger.info("Generating embeddings in batches...")
+            batch_size = 500  # Process 500 venues at a time
+            all_embeddings = []
 
-            embeddings = await self.embedding_service.batch_generate_embeddings(
-                descriptions
-            )
+            for i in range(0, len(venues), batch_size):
+                batch_venues = venues[i:i + batch_size]
+                descriptions = [
+                    self.embedding_service.format_venue_description(venue)
+                    for venue in batch_venues
+                ]
+
+                logger.info(f"Processing batch {i//batch_size + 1}/{(len(venues) + batch_size - 1)//batch_size} ({len(batch_venues)} venues)...")
+                batch_embeddings = await self.embedding_service.batch_generate_embeddings(
+                    descriptions
+                )
+                all_embeddings.extend(batch_embeddings)
+
+            embeddings = all_embeddings
+            logger.info(f"Generated {len(embeddings)} embeddings total")
 
             # Save to database first to get IDs
             logger.info("Saving venues to database...")
@@ -269,14 +279,19 @@ class VenueSyncService:
 
             self.db.commit()
 
-            # Store embeddings in ChromaDB
+            # Store embeddings in ChromaDB in batches
             logger.info("Storing embeddings in ChromaDB...")
-            self.vector_store.add_venue_embeddings_batch(
-                venue_ids=venue_ids,
-                external_ids=external_ids,
-                embeddings=embeddings,
-                metadatas=metadatas,
-            )
+            chroma_batch_size = 5000  # ChromaDB max batch size limit
+            for i in range(0, len(venue_ids), chroma_batch_size):
+                batch_end = min(i + chroma_batch_size, len(venue_ids))
+                logger.info(f"Storing ChromaDB batch {i//chroma_batch_size + 1}/{(len(venue_ids) + chroma_batch_size - 1)//chroma_batch_size} ({batch_end - i} venues)...")
+
+                self.vector_store.add_venue_embeddings_batch(
+                    venue_ids=venue_ids[i:batch_end],
+                    external_ids=external_ids[i:batch_end],
+                    embeddings=embeddings[i:batch_end],
+                    metadatas=metadatas[i:batch_end],
+                )
 
             stats["total"] = len(venues)
 
@@ -315,10 +330,10 @@ async def main():
         # Initialize sync service
         sync_service = VenueSyncService(db, settings.SEOUL_OPENAPI_KEY)
 
-        # Run synchronization (limit to 100 records per category for testing)
-        logger.info("Starting venue synchronization...")
+        # Run synchronization (fetch all records)
+        logger.info("Starting venue synchronization (all records)...")
         stats = await sync_service.sync_venues_with_embeddings(
-            max_records_per_category=100
+            max_records_per_category=10000  # High limit to fetch all available data
         )
 
         logger.info("Synchronization completed successfully!")

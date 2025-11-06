@@ -24,9 +24,9 @@ class VenueVectorStore:
         Args:
             persist_directory: Directory to persist ChromaDB data
         """
-        self.client = chromadb.Client(
-            Settings(
-                persist_directory=persist_directory,
+        self.client = chromadb.PersistentClient(
+            path=persist_directory,
+            settings=Settings(
                 anonymized_telemetry=False,
             )
         )
