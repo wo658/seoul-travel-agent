@@ -1,5 +1,7 @@
 """Planner agent graph configuration."""
 
+import logging
+
 from langgraph.graph import END, START, StateGraph
 
 from app.ai.agents.planner.nodes import (
@@ -10,6 +12,8 @@ from app.ai.agents.planner.nodes import (
     validate_plan,
 )
 from app.ai.agents.planner.state import PlanningState
+
+logger = logging.getLogger(__name__)
 
 
 def create_planner_graph() -> StateGraph:
@@ -22,6 +26,8 @@ def create_planner_graph() -> StateGraph:
                                                               ↓
                                                           [invalid] → generate_plan (retry max 3x)
     """
+    logger.info("🏗️ Creating planner graph")
+
     # Initialize graph with PlanningState
     graph = StateGraph(PlanningState)
 
@@ -30,12 +36,14 @@ def create_planner_graph() -> StateGraph:
     graph.add_node("fetch_venues", fetch_venues)
     graph.add_node("generate_plan", generate_plan)
     graph.add_node("validate", validate_plan)
+    logger.debug("📦 Added 4 nodes: collect_info, fetch_venues, generate_plan, validate")
 
     # Define edges
     graph.add_edge(START, "collect_info")
     graph.add_edge("collect_info", "fetch_venues")
     graph.add_edge("fetch_venues", "generate_plan")
     graph.add_edge("generate_plan", "validate")
+    logger.debug("🔗 Added sequential edges")
 
     # Conditional routing: retry or end
     graph.add_conditional_edges(
@@ -46,7 +54,9 @@ def create_planner_graph() -> StateGraph:
             "end": END,
         },
     )
+    logger.debug("🔀 Added conditional edges for retry logic")
 
+    logger.info("✅ Planner graph created successfully")
     return graph
 
 

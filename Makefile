@@ -28,7 +28,7 @@ webapp: install ## 🚀 한 번에 모든 것 실행 (Frontend + Backend + SQLit
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "📦 Starting Backend (FastAPI + SQLite)..."
-	@cd backend && nohup uvicorn seoul_travel.main:app --reload --port 8000 > ../backend.log 2>&1 & echo $$! > ../backend.pid
+	@cd backend && source .venv/bin/activate && nohup uvicorn app.main:app --reload --port 8000 > ../backend.log 2>&1 & echo $$! > ../backend.pid
 	@sleep 3
 	@echo "✅ Backend started on http://localhost:8000"
 	@echo ""
@@ -61,7 +61,7 @@ stop-webapp: ## 🛑 모든 로컬 서비스 중지
 	@echo "🛑 Stopping all services..."
 	@if [ -f backend.pid ]; then kill $$(cat backend.pid) 2>/dev/null || true; rm backend.pid; echo "✅ Backend stopped"; fi
 	@if [ -f frontend.pid ]; then kill $$(cat frontend.pid) 2>/dev/null || true; rm frontend.pid; echo "✅ Frontend stopped"; fi
-	@pkill -f "uvicorn seoul_travel.main:app" 2>/dev/null || true
+	@pkill -f "uvicorn app.main:app" 2>/dev/null || true
 	@pkill -f "expo start --web" 2>/dev/null || true
 	@pkill -f "react-native" 2>/dev/null || true
 	@echo "✅ All services stopped!"
@@ -94,7 +94,7 @@ dev: install ## Start local development servers (SQLite + hot reload)
 	@echo "Or use: make webapp (자동 실행)"
 
 dev-backend: ## Run backend only (local SQLite)
-	cd backend && uvicorn seoul_travel.main:app --reload --port 8000
+	cd backend && source .venv/bin/activate && uvicorn app.main:app --reload --port 8000
 
 dev-frontend: ## Run frontend only (local)
 	cd frontend && npm run web

@@ -1,5 +1,9 @@
 """AI service - LangGraph agent orchestration for travel planning."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class AIService:
     """AI service for LangGraph-based travel planning agents.
@@ -30,6 +34,9 @@ class AIService:
         Raises:
             ValueError: If plan generation fails after max attempts
         """
+        logger.info("🎯 [AIService] Starting plan generation")
+        logger.debug(f"📥 Input: dates={dates}, budget={budget}, interests={interests}")
+
         from app.ai.agents.planner import PlanningState, planner_graph
 
         initial_state: PlanningState = {
@@ -45,14 +52,21 @@ class AIService:
             "errors": [],
         }
 
+        logger.info("🔄 [AIService] Invoking planner graph...")
         final_state = await planner_graph.ainvoke(initial_state)
 
+        logger.debug(f"📤 Final state: attempts={final_state.get('attempts')}, errors={len(final_state.get('errors', []))}, has_plan={final_state.get('travel_plan') is not None}")
+
         if final_state.get("errors"):
-            raise ValueError(f"Plan generation failed: {'; '.join(final_state['errors'])}")
+            error_msg = f"Plan generation failed: {'; '.join(final_state['errors'])}"
+            logger.error(f"❌ [AIService] {error_msg}")
+            raise ValueError(error_msg)
 
         if not final_state.get("travel_plan"):
+            logger.error("❌ [AIService] No plan generated")
             raise ValueError("No plan generated")
 
+        logger.info("✅ [AIService] Plan generation successful")
         return final_state["travel_plan"]
 
     async def review_and_modify_plan(

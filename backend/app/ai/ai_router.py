@@ -1,5 +1,7 @@
 """AI domain router - LangGraph agent endpoints."""
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -10,6 +12,8 @@ from app.ai.ai_schemas import (
 )
 from app.ai.ai_service import ai_service
 from app.database import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -28,6 +32,9 @@ async def generate_travel_plan(
     3. Generate comprehensive day-by-day itinerary
     4. Validate budget and time constraints
     """
+    logger.info("🚀 [API] POST /plans/generate - Request received")
+    logger.debug(f"📥 Request: dates={request.start_date} to {request.end_date}, budget={request.budget}, interests={request.interests}")
+
     try:
         plan = await ai_service.generate_initial_plan(
             user_request=request.user_request,
@@ -36,11 +43,14 @@ async def generate_travel_plan(
             interests=request.interests,
         )
 
+        logger.info("✅ [API] Plan generation completed successfully")
         return TravelPlanResponse(plan=plan)
 
     except ValueError as e:
+        logger.error(f"❌ [API] Validation error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(f"❌ [API] Plan generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Plan generation failed: {str(e)}")
 
 
