@@ -53,10 +53,6 @@ env/
 uv.lock
 
 # Database
-*.db
-*.sqlite
-*.sqlite3
-seoul_travel.db
 
 # Environment
 .env
@@ -89,4 +85,3 @@ docker-compose.override.yml
 
 # mcp
 .mcp.json
-backend/chroma_db/
