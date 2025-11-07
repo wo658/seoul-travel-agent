@@ -1,5 +1,7 @@
 """Main application entry point."""
 
+import logging
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,14 +13,28 @@ from app.config import settings
 from app.database import create_tables
 from app.plan import router as plan_router
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan event handler."""
     # Startup
+    logger.info("🚀 Starting Seoul Travel Agent API...")
     create_tables()
+    logger.info("✅ Database tables created/verified")
     yield
     # Shutdown (if needed)
+    logger.info("🛑 Shutting down Seoul Travel Agent API...")
 
 
 def create_application() -> FastAPI:

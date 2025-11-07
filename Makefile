@@ -28,7 +28,7 @@ webapp: install ## 🚀 한 번에 모든 것 실행 (Frontend + Backend + SQLit
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "📦 Starting Backend (FastAPI + SQLite)..."
-	@cd backend && source .venv/bin/activate && nohup uvicorn app.main:app --reload --port 8000 > ../backend.log 2>&1 & echo $$! > ../backend.pid
+	@cd backend && . .venv/bin/activate && nohup uvicorn app.main:app --reload --port 8000 > ../backend.log 2>&1 & echo $$! > ../backend.pid
 	@sleep 3
 	@echo "✅ Backend started on http://localhost:8000"
 	@echo ""
@@ -94,7 +94,7 @@ dev: install ## Start local development servers (SQLite + hot reload)
 	@echo "Or use: make webapp (자동 실행)"
 
 dev-backend: ## Run backend only (local SQLite)
-	cd backend && source .venv/bin/activate && uvicorn app.main:app --reload --port 8000
+	cd backend && . .venv/bin/activate && uvicorn app.main:app --reload --port 8000 --log-level info
 
 dev-frontend: ## Run frontend only (local)
 	cd frontend && npm run web

@@ -38,11 +38,26 @@ async def collect_info(state: PlanningState) -> dict[str, Any]:
         parsed_data = json.loads(response.content)
         logger.info(f"✅ [collect_info] Successfully parsed: dates={parsed_data.get('dates')}, budget={parsed_data.get('budget')}, interests={parsed_data.get('interests')}")
 
-        return {
-            "dates": tuple(parsed_data.get("dates", state.get("dates", ("", "")))),
-            "budget": parsed_data.get("budget", state.get("budget", 0)),
-            "interests": parsed_data.get("interests", state.get("interests", [])),
-        }
+        # Only override state values if LLM extracted valid data
+        # Otherwise, keep existing state values
+        result = {}
+
+        if parsed_data.get("dates") is not None:
+            result["dates"] = tuple(parsed_data["dates"])
+        elif state.get("dates") is not None:
+            result["dates"] = state["dates"]
+
+        if parsed_data.get("budget") is not None:
+            result["budget"] = parsed_data["budget"]
+        elif state.get("budget") is not None:
+            result["budget"] = state["budget"]
+
+        if parsed_data.get("interests") is not None:
+            result["interests"] = parsed_data["interests"]
+        elif state.get("interests") is not None:
+            result["interests"] = state["interests"]
+
+        return result
     except json.JSONDecodeError as e:
         logger.error(f"❌ [collect_info] JSON decode failed: {e}")
         logger.debug(f"Raw response: {response.content[:500]}")
@@ -87,14 +102,22 @@ async def generate_plan(state: PlanningState) -> dict[str, Any]:
 
     llm = get_llm(temperature=0.5)
 
+    # Safely get state values with defaults to prevent format errors
+    dates = state.get("dates", ("", ""))
+    budget = state.get("budget", 0)
+    interests = state.get("interests", [])
+    attractions = state.get("attractions", [])
+    restaurants = state.get("restaurants", [])
+    accommodations = state.get("accommodations", [])
+
     prompt = GENERATE_PLAN_PROMPT.format(
         user_request=state["user_request"],
-        dates=state["dates"],
-        budget=state["budget"],
-        interests=", ".join(state["interests"]),
-        attractions=json.dumps(state["attractions"], ensure_ascii=False),
-        restaurants=json.dumps(state["restaurants"], ensure_ascii=False),
-        accommodations=json.dumps(state["accommodations"], ensure_ascii=False),
+        dates=dates,
+        budget=budget,
+        interests=", ".join(interests) if interests else "general sightseeing",
+        attractions=json.dumps(attractions, ensure_ascii=False),
+        restaurants=json.dumps(restaurants, ensure_ascii=False),
+        accommodations=json.dumps(accommodations, ensure_ascii=False),
     )
 
     messages = [
@@ -134,9 +157,12 @@ async def validate_plan(state: PlanningState) -> dict[str, Any]:
 
     llm = get_llm(temperature=0)
 
+    # Safely get budget with default to prevent format errors
+    budget = state.get("budget", 0)
+
     prompt = VALIDATE_PLAN_PROMPT.format(
         plan=json.dumps(state["travel_plan"], ensure_ascii=False),
-        budget=state["budget"],
+        budget=budget,
     )
 
     messages = [
