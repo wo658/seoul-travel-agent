@@ -67,30 +67,60 @@ async def collect_info(state: PlanningState) -> dict[str, Any]:
 
 
 async def fetch_venues(state: PlanningState) -> dict[str, Any]:
-    """Fetch relevant venues using vector search (SEO-33 integration)."""
+    """Fetch tourist attractions from database."""
     logger.info("🔵 [fetch_venues] Node started")
     logger.debug(f"📥 Input state: interests={state.get('interests')}, budget={state.get('budget')}")
 
-    # TODO: Integrate with SEO-33 vector search when available
-    # For now, return placeholder data structure
+    from app.database import SessionLocal
+    from app.tourist_attraction.models import TouristAttraction
 
-    # Example integration:
-    # from app.venue.service import search_venues_vector
-    #
-    # attractions = await search_venues_vector(
-    #     db=db,
-    #     query=f"{' '.join(state['interests'])} 관광지",
-    #     category='attraction',
-    #     limit=20,
-    #     similarity_threshold=0.7,
-    # )
+    # Create database session
+    db = SessionLocal()
 
-    logger.info("✅ [fetch_venues] Returning placeholder data (SEO-33 not integrated yet)")
-    return {
-        "attractions": [],
-        "restaurants": [],
-        "accommodations": [],
-    }
+    try:
+        # Get all tourist attractions
+        attractions_query = db.query(TouristAttraction).all()
+
+        # Convert to dict format for LLM consumption
+        def attraction_to_dict(attraction):
+            """Convert TouristAttraction to dict."""
+            return {
+                "id": attraction.id,
+                "name": attraction.name,
+                "category": attraction.category,
+                "description": attraction.introduction or "정보 없음",
+                "address": attraction.road_address or attraction.jibun_address or "",
+                "phone": attraction.phone or "",
+                "latitude": attraction.latitude,
+                "longitude": attraction.longitude,
+                "facilities": {
+                    "public": attraction.public_facilities,
+                    "cultural": attraction.cultural_facilities,
+                    "sports": attraction.sports_facilities,
+                },
+            }
+
+        attractions = [attraction_to_dict(a) for a in attractions_query]
+
+        logger.info(f"✅ [fetch_venues] Found {len(attractions)} tourist attractions")
+
+        # TODO: Implement Naver Local API integration for restaurants and accommodations
+        return {
+            "attractions": attractions,
+            "restaurants": [],  # Will be populated via Naver Local API
+            "accommodations": [],  # Will be populated via Naver Local API
+        }
+
+    except Exception as e:
+        logger.error(f"❌ [fetch_venues] Error during venue search: {e}", exc_info=True)
+        # Return empty lists on error to allow planning to continue
+        return {
+            "attractions": [],
+            "restaurants": [],
+            "accommodations": [],
+        }
+    finally:
+        db.close()
 
 
 async def generate_plan(state: PlanningState) -> dict[str, Any]:

@@ -51,11 +51,11 @@ class TestImports:
         assert router is not None
         assert TravelPlan is not None
 
-    def test_import_venue_modules(self):
-        """Test venue domain modules can be imported."""
-        from app.venue.models import Venue
+    def test_import_tourist_attraction_modules(self):
+        """Test tourist attraction domain modules can be imported."""
+        from app.tourist_attraction.models import TouristAttraction
 
-        assert Venue is not None
+        assert TouristAttraction is not None
 
     def test_import_ai_modules(self):
         """Test AI domain modules can be imported."""
@@ -82,12 +82,6 @@ class TestImports:
         assert create_reviewer_graph is not None
         assert ReviewState is not None
 
-    def test_import_seoulopenapi(self):
-        """Test Seoul Open API modules can be imported."""
-        from app.seoulopenapi.client import SeoulOpenAPIClient
-
-        assert SeoulOpenAPIClient is not None
-
     def test_no_circular_imports(self):
         """Test that importing all modules doesn't cause circular import errors."""
         # Import all major modules in sequence
@@ -95,7 +89,7 @@ class TestImports:
         from app.database import Base
         from app.auth.models import User
         from app.plan.models import TravelPlan
-        from app.venue.models import Venue
+        from app.tourist_attraction.models import TouristAttraction
         from app.ai.ai_service import ai_service
         from app.main import app
 

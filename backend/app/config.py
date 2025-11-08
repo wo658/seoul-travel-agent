@@ -26,8 +26,15 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o-mini"  # Default model for all LLM calls
     ANTHROPIC_API_KEY: str = ""
 
-    # Seoul Open API
-    SEOUL_OPENAPI_KEY: str = ""
+    # Naver API (Local Search)
+    NAVER_CLIENT_ID: str = ""
+    NAVER_CLIENT_SECRET: str = ""
+
+    # Kakao API (Mobility/Maps)
+    KAKAO_REST_API_KEY: str = ""
+
+    # ODsay API (Public Transit)
+    ODSAY_API_KEY: str = ""
 
     # Auth
     SECRET_KEY: str = "dev-secret-key-change-in-production"

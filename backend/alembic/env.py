@@ -11,10 +11,9 @@ from app.config import settings
 from app.database import Base
 
 # Import all models to register them with Base
-# from app.ai.models import Conversation, Message  # noqa: F401
-# from app.auth.models import User  # noqa: F401
-# from app.plan.models import TravelPlan  # noqa: F401
-from app.venue.models import Venue  # noqa: F401
+from app.auth.models import User  # noqa: F401
+from app.plan.models import TravelPlan  # noqa: F401
+from app.tourist_attraction.models import TouristAttraction  # noqa: F401
 
 # This is the Alembic Config object
 config = context.config
