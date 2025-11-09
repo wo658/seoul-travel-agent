@@ -69,6 +69,115 @@ class AIService:
         logger.info("✅ [AIService] Plan generation successful")
         return final_state["travel_plan"]
 
+    async def generate_plan_stream(
+        self,
+        user_request: str,
+        dates: tuple[str, str],
+        budget: int,
+        interests: list[str],
+    ):
+        """Generate travel plan with streaming progress updates.
+
+        Yields SSE events:
+        - {"type": "node_start", "node": "collect_info"}
+        - {"type": "node_complete", "node": "collect_info", "data": {...}}
+        - {"type": "complete", "plan": {...}}
+        - {"type": "error", "message": "..."}
+        """
+        logger.info("🎯 [AIService] Starting streaming plan generation")
+
+        from app.ai.agents.planner import PlanningState, planner_graph
+
+        initial_state: PlanningState = {
+            "user_request": user_request,
+            "dates": dates,
+            "budget": budget,
+            "interests": interests,
+            "attractions": [],
+            "restaurants": [],
+            "accommodations": [],
+            "travel_plan": None,
+            "attempts": 0,
+            "errors": [],
+        }
+
+        try:
+            # Use astream to get state updates during graph execution
+            async for event in planner_graph.astream(initial_state):
+                # LangGraph astream yields (node_name, state_update) tuples
+                for node_name, state_update in event.items():
+                    # Skip if state_update is None
+                    if state_update is None:
+                        logger.debug(f"📡 [Stream] Node: {node_name}, Update: None")
+                        continue
+
+                    logger.debug(f"📡 [Stream] Node: {node_name}, Update: {list(state_update.keys())}")
+
+                    # Emit node completion event with relevant data
+                    event_data = {
+                        "type": "node_complete",
+                        "node": node_name,
+                        "timestamp": None,
+                    }
+
+                    # Include relevant data based on node
+                    if node_name == "collect_info":
+                        event_data["data"] = {
+                            "dates": state_update.get("dates"),
+                            "budget": state_update.get("budget"),
+                            "interests": state_update.get("interests"),
+                        }
+                    elif node_name == "fetch_venues":
+                        event_data["data"] = {
+                            "attractions_count": len(state_update.get("attractions", [])),
+                            "restaurants_count": len(state_update.get("restaurants", [])),
+                            "accommodations_count": len(state_update.get("accommodations", [])),
+                        }
+                    elif node_name == "generate_plan":
+                        event_data["data"] = {
+                            "has_plan": state_update.get("travel_plan") is not None,
+                            "attempts": state_update.get("attempts"),
+                        }
+                    elif node_name == "validate":
+                        event_data["data"] = {
+                            "errors": state_update.get("errors", []),
+                        }
+
+                    yield event_data
+
+            # Get final state
+            final_state = await planner_graph.ainvoke(initial_state)
+
+            if final_state.get("errors"):
+                error_msg = "; ".join(final_state["errors"])
+                yield {
+                    "type": "error",
+                    "message": error_msg,
+                }
+                return
+
+            if not final_state.get("travel_plan"):
+                yield {
+                    "type": "error",
+                    "message": "No plan generated",
+                }
+                return
+
+            # Emit final complete event
+            yield {
+                "type": "complete",
+                "plan": final_state["travel_plan"],
+            }
+
+            logger.info("✅ [AIService] Streaming plan generation complete")
+
+        except Exception as e:
+            logger.error(f"❌ [AIService] Streaming error: {e}", exc_info=True)
+            yield {
+                "type": "error",
+                "message": str(e),
+            }
+
     async def review_and_modify_plan(
         self,
         original_plan: dict,

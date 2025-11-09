@@ -1,8 +1,10 @@
 """AI domain router - LangGraph agent endpoints."""
 
+import json
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.ai.ai_schemas import (
@@ -52,6 +54,55 @@ async def generate_travel_plan(
     except Exception as e:
         logger.error(f"❌ [API] Plan generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Plan generation failed: {str(e)}")
+
+
+@router.post("/plans/generate/stream")
+async def generate_travel_plan_stream(
+    request: GenerateTravelPlanRequest,
+    db: Session = Depends(get_db),
+):
+    """Generate travel plan with SSE streaming for real-time progress updates.
+
+    This endpoint streams the following events:
+    - status: Current node execution status
+    - node_start: When a node starts execution
+    - node_complete: When a node completes with data
+    - error: If any error occurs
+    - complete: Final plan when generation is complete
+    """
+    logger.info("🚀 [API] POST /plans/generate/stream - SSE request received")
+    logger.debug(f"📥 Request: dates={request.start_date} to {request.end_date}, budget={request.budget}")
+
+    async def event_generator():
+        """Generate SSE events for plan generation progress."""
+        try:
+            # Stream events from the planner agent
+            async for event in ai_service.generate_plan_stream(
+                user_request=request.user_request,
+                dates=(request.start_date, request.end_date),
+                budget=request.budget,
+                interests=request.interests,
+            ):
+                # Format as SSE event
+                event_data = json.dumps(event, ensure_ascii=False)
+                yield f"data: {event_data}\n\n"
+
+        except Exception as e:
+            logger.error(f"❌ [API] Streaming error: {e}", exc_info=True)
+            error_event = {
+                "type": "error",
+                "message": str(e),
+            }
+            yield f"data: {json.dumps(error_event)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/plans/review", response_model=TravelPlanResponse)

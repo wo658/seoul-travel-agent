@@ -18,102 +18,210 @@ logger = logging.getLogger(__name__)
 
 
 async def collect_info(state: PlanningState) -> dict[str, Any]:
-    """Parse user request and extract structured information."""
+    """Parse user request and extract structured information.
+
+    Priority:
+    1. Use structured data already in state (dates, budget, interests)
+    2. Only use LLM parsing if data is missing from state
+    """
     logger.info("🔵 [collect_info] Node started")
-    logger.debug(f"📥 Input state: user_request={state.get('user_request', '')[:100]}...")
+    logger.debug(f"📥 Input state: dates={state.get('dates')}, budget={state.get('budget')}, interests={state.get('interests')}")
 
-    llm = get_llm(temperature=0)
+    result = {}
 
-    prompt = COLLECT_INFO_PROMPT.format(user_request=state["user_request"])
+    # Priority 1: Use existing structured data from state
+    if state.get("dates") and state["dates"] != ("", ""):
+        result["dates"] = state["dates"]
+        logger.info(f"✅ [collect_info] Using provided dates: {result['dates']}")
 
-    messages = [
-        SystemMessage(content="You are a travel planning assistant."),
-        HumanMessage(content=prompt),
-    ]
+    if state.get("budget") and state["budget"] > 0:
+        result["budget"] = state["budget"]
+        logger.info(f"✅ [collect_info] Using provided budget: {result['budget']:,} KRW")
 
-    response = await llm.ainvoke(messages)
-    logger.debug(f"🤖 LLM response length: {len(response.content)} chars")
+    if state.get("interests") and len(state["interests"]) > 0:
+        result["interests"] = state["interests"]
+        logger.info(f"✅ [collect_info] Using provided interests: {result['interests']}")
 
-    try:
-        parsed_data = json.loads(response.content)
-        logger.info(f"✅ [collect_info] Successfully parsed: dates={parsed_data.get('dates')}, budget={parsed_data.get('budget')}, interests={parsed_data.get('interests')}")
+    # Priority 2: Only parse from user_request if data is still missing
+    missing_fields = []
+    if "dates" not in result:
+        missing_fields.append("dates")
+    if "budget" not in result:
+        missing_fields.append("budget")
+    if "interests" not in result:
+        missing_fields.append("interests")
 
-        # Only override state values if LLM extracted valid data
-        # Otherwise, keep existing state values
-        result = {}
+    if missing_fields:
+        logger.info(f"🔍 [collect_info] Parsing missing fields from user_request: {missing_fields}")
 
-        if parsed_data.get("dates") is not None:
-            result["dates"] = tuple(parsed_data["dates"])
-        elif state.get("dates") is not None:
-            result["dates"] = state["dates"]
+        llm = get_llm(temperature=0)
+        prompt = COLLECT_INFO_PROMPT.format(user_request=state["user_request"])
 
-        if parsed_data.get("budget") is not None:
-            result["budget"] = parsed_data["budget"]
-        elif state.get("budget") is not None:
-            result["budget"] = state["budget"]
+        messages = [
+            SystemMessage(content="You are a travel planning assistant."),
+            HumanMessage(content=prompt),
+        ]
 
-        if parsed_data.get("interests") is not None:
-            result["interests"] = parsed_data["interests"]
-        elif state.get("interests") is not None:
-            result["interests"] = state["interests"]
+        try:
+            response = await llm.ainvoke(messages)
+            parsed_data = json.loads(response.content)
+            logger.debug(f"🤖 LLM parsed: {parsed_data}")
 
-        return result
-    except json.JSONDecodeError as e:
-        logger.error(f"❌ [collect_info] JSON decode failed: {e}")
-        logger.debug(f"Raw response: {response.content[:500]}")
-        return {
-            "errors": ["Failed to parse user request. Please provide clearer information."]
-        }
+            # Fill in missing fields only
+            if "dates" in missing_fields and parsed_data.get("dates"):
+                result["dates"] = tuple(parsed_data["dates"])
+            if "budget" in missing_fields and parsed_data.get("budget"):
+                result["budget"] = parsed_data["budget"]
+            if "interests" in missing_fields and parsed_data.get("interests"):
+                result["interests"] = parsed_data["interests"]
+
+        except (json.JSONDecodeError, Exception) as e:
+            logger.error(f"❌ [collect_info] LLM parsing failed: {e}")
+            return {
+                "errors": ["Failed to parse user request. Please provide clearer information."]
+            }
+
+    logger.info(f"✅ [collect_info] Final result: dates={result.get('dates')}, budget={result.get('budget')}, interests={result.get('interests')}")
+    return result
 
 
 async def fetch_venues(state: PlanningState) -> dict[str, Any]:
-    """Fetch tourist attractions from database."""
+    """Fetch tourist attractions using ChromaDB and search nearby venues via Naver API."""
     logger.info("🔵 [fetch_venues] Node started")
-    logger.debug(f"📥 Input state: interests={state.get('interests')}, budget={state.get('budget')}")
+    logger.debug(f"📥 Input state: interests={state.get('interests')}, budget={state.get('budget')}, dates={state.get('dates')}")
 
+    from datetime import datetime
     from app.database import SessionLocal
     from app.tourist_attraction.models import TouristAttraction
+    from app.tourist_attraction.vector_store import TouristAttractionVectorStore
+    from app.naver.client import NaverLocalClient
 
-    # Create database session
     db = SessionLocal()
 
     try:
-        # Get all tourist attractions
-        attractions_query = db.query(TouristAttraction).all()
+        # Step 1: Calculate number of days
+        dates = state.get("dates", ("", ""))
+        num_days = 1
+        if dates and len(dates) == 2:
+            try:
+                start_date = datetime.strptime(dates[0], "%Y-%m-%d")
+                end_date = datetime.strptime(dates[1], "%Y-%m-%d")
+                num_days = (end_date - start_date).days + 1
+            except Exception:
+                pass
 
-        # Convert to dict format for LLM consumption
-        def attraction_to_dict(attraction):
-            """Convert TouristAttraction to dict."""
-            return {
-                "id": attraction.id,
-                "name": attraction.name,
-                "category": attraction.category,
-                "description": attraction.introduction or "정보 없음",
-                "address": attraction.road_address or attraction.jibun_address or "",
-                "phone": attraction.phone or "",
-                "latitude": attraction.latitude,
-                "longitude": attraction.longitude,
-                "facilities": {
-                    "public": attraction.public_facilities,
-                    "cultural": attraction.cultural_facilities,
-                    "sports": attraction.sports_facilities,
-                },
-            }
+        logger.info(f"📅 [fetch_venues] Trip duration: {num_days} days")
 
-        attractions = [attraction_to_dict(a) for a in attractions_query]
+        # Step 2: Use ChromaDB to find attractions matching user interests
+        interests = state.get("interests", [])
+        query = " ".join(interests) if interests else "서울 관광"
 
-        logger.info(f"✅ [fetch_venues] Found {len(attractions)} tourist attractions")
+        logger.info(f"🔍 [fetch_venues] Searching attractions with ChromaDB: '{query}'")
+        vector_store = TouristAttractionVectorStore(persist_directory="chroma_db")
 
-        # TODO: Implement Naver Local API integration for restaurants and accommodations
+        # Search for attractions (1 per day)
+        attraction_results = vector_store.search_attractions(
+            query=query,
+            n_results=num_days,  # 하루당 관광지 1개
+        )
+
+        # Get full attraction data from DB
+        selected_attractions = []
+        for metadata, similarity in attraction_results:
+            attraction_id = int(metadata["id"])
+            attraction = db.query(TouristAttraction).filter(
+                TouristAttraction.id == attraction_id
+            ).first()
+
+            if attraction:
+                selected_attractions.append({
+                    "id": attraction.id,
+                    "name": attraction.name,
+                    "category": attraction.category,
+                    "description": attraction.introduction or "정보 없음",
+                    "address": attraction.road_address or attraction.jibun_address or "",
+                    "phone": attraction.phone or "",
+                    "latitude": attraction.latitude,
+                    "longitude": attraction.longitude,
+                    "similarity_score": round(similarity, 3),
+                })
+
+        logger.info(f"✅ [fetch_venues] Selected {len(selected_attractions)} attractions via ChromaDB")
+        for idx, attr in enumerate(selected_attractions, 1):
+            logger.info(f"   {idx}. {attr['name']} (similarity: {attr['similarity_score']})")
+
+        # Step 3: Search nearby restaurants and accommodations for each attraction
+        all_restaurants = []
+        all_accommodations = []
+
+        try:
+            naver_client = NaverLocalClient()
+
+            for attraction in selected_attractions:
+                attr_name = attraction["name"]
+                # Extract location keyword from address
+                address = attraction.get("address", "")
+                location_keyword = address.split()[1] if len(address.split()) > 1 else "서울"
+
+                # Search nearby restaurants
+                logger.info(f"🔍 [fetch_venues] Searching restaurants near {attr_name} ({location_keyword})")
+                restaurant_results = await naver_client.search_local(
+                    query=f"{location_keyword} 맛집",
+                    display=2,  # 관광지당 2개
+                    sort="random",
+                )
+
+                for item in restaurant_results:
+                    all_restaurants.append({
+                        "name": item.get("title", ""),
+                        "category": item.get("category", ""),
+                        "address": item.get("roadAddress") or item.get("address", ""),
+                        "phone": item.get("telephone", ""),
+                        "latitude": item.get("latitude"),
+                        "longitude": item.get("longitude"),
+                        "description": f"카테고리: {item.get('category', '정보없음')}",
+                        "near_attraction": attr_name,
+                    })
+
+            logger.info(f"✅ [fetch_venues] Found {len(all_restaurants)} restaurants via Naver API")
+
+            # Search accommodations once (not per attraction)
+            if selected_attractions:
+                first_attr = selected_attractions[0]
+                address = first_attr.get("address", "")
+                location_keyword = address.split()[1] if len(address.split()) > 1 else "서울"
+
+                logger.info(f"🔍 [fetch_venues] Searching accommodations in {location_keyword}")
+                accommodation_results = await naver_client.search_local(
+                    query=f"{location_keyword} 호텔 숙박",
+                    display=5,
+                    sort="random",
+                )
+
+                for item in accommodation_results:
+                    all_accommodations.append({
+                        "name": item.get("title", ""),
+                        "category": item.get("category", ""),
+                        "address": item.get("roadAddress") or item.get("address", ""),
+                        "phone": item.get("telephone", ""),
+                        "latitude": item.get("latitude"),
+                        "longitude": item.get("longitude"),
+                        "description": f"카테고리: {item.get('category', '정보없음')}",
+                    })
+
+                logger.info(f"✅ [fetch_venues] Found {len(all_accommodations)} accommodations via Naver API")
+
+        except Exception as e:
+            logger.warning(f"⚠️ [fetch_venues] Naver API error (continuing with attractions only): {e}")
+
         return {
-            "attractions": attractions,
-            "restaurants": [],  # Will be populated via Naver Local API
-            "accommodations": [],  # Will be populated via Naver Local API
+            "attractions": selected_attractions,
+            "restaurants": all_restaurants,
+            "accommodations": all_accommodations,
         }
 
     except Exception as e:
         logger.error(f"❌ [fetch_venues] Error during venue search: {e}", exc_info=True)
-        # Return empty lists on error to allow planning to continue
         return {
             "attractions": [],
             "restaurants": [],
@@ -140,9 +248,25 @@ async def generate_plan(state: PlanningState) -> dict[str, Any]:
     restaurants = state.get("restaurants", [])
     accommodations = state.get("accommodations", [])
 
+    # Calculate trip details
+    from datetime import datetime
+    start_date = dates[0] if dates and len(dates) > 0 else ""
+    end_date = dates[1] if dates and len(dates) > 1 else ""
+
+    num_days = 1
+    if start_date and end_date:
+        try:
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+            end = datetime.strptime(end_date, "%Y-%m-%d")
+            num_days = (end - start).days + 1
+        except Exception:
+            pass
+
     prompt = GENERATE_PLAN_PROMPT.format(
         user_request=state["user_request"],
-        dates=dates,
+        start_date=start_date,
+        end_date=end_date,
+        num_days=num_days,
         budget=budget,
         interests=", ".join(interests) if interests else "general sightseeing",
         attractions=json.dumps(attractions, ensure_ascii=False),
