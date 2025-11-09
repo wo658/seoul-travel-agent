@@ -144,3 +144,6 @@ export interface ConversationListItem {
 
 // Re-export plan viewer types
 export * from './plan-viewer';
+
+// Re-export planner API types
+export * from './planner-api';
