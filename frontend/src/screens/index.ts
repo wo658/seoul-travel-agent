@@ -10,3 +10,4 @@ export {
 export { TravelPlanInputScreen } from './TravelPlanInputScreen';
 export { PlanReviewScreen } from './PlanReviewScreen';
 export { PlanViewerScreen } from './PlanViewerScreen';
+export { PlanViewerDemoScreen } from './PlanViewerDemoScreen';

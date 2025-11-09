@@ -45,6 +45,9 @@ export function PlanViewerScreen({
 
   // Convert DayItinerary to EditableDayItinerary
   function convertToEditableDays(days: TravelPlan['days']): EditableDayItinerary[] {
+    if (!days || days.length === 0) {
+      return [];
+    }
     return days.map((day) => ({
       ...day,
       is_expanded: true,
@@ -169,7 +172,7 @@ export function PlanViewerScreen({
       const updatedPlan = {
         ...currentPlan,
         days: convertToRegularDays(editableDays),
-        total_cost: editableDays.reduce((sum, day) => sum + day.daily_cost, 0),
+        total_cost: editableDays?.reduce((sum, day) => sum + day.daily_cost, 0) || 0,
       };
       onSave(updatedPlan);
     }
