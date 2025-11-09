@@ -22,12 +22,15 @@ export default function App() {
   >();
   const [currentPlan, setCurrentPlan] = useState<TravelPlan | null>(null);
 
+  console.log('[App] Current screen:', currentScreen);
+
   const handleStartChat = () => {
     setSelectedConversationId(undefined);
     setCurrentScreen('chat');
   };
 
   const handleStartPlanning = () => {
+    console.log('[App] Navigating to plan input screen');
     setCurrentScreen('planInput');
   };
 

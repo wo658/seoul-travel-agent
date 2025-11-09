@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Pressable } from 'react-native';
 import { PlanForm } from '@/components/travel';
 import { Text } from '@/components/ui';
 import { PlanFormData, GeneratePlanApiResponse } from '@/types';
 import { generatePlan } from '@/services/api/chat';
+import { ArrowLeft } from '@/lib/icons';
 
 interface TravelPlanInputScreenProps {
   onPlanGenerated: (plan: GeneratePlanApiResponse) => void;
@@ -43,8 +44,22 @@ export function TravelPlanInputScreen({
     }
   };
 
+  console.log('[TravelPlanInputScreen] Rendering, isGenerating:', isGenerating, 'error:', error);
+
   return (
     <View className="flex-1 bg-background">
+      {/* Header */}
+      <View className="bg-card border-b border-border px-4 py-3 flex flex-row items-center justify-between">
+        <Pressable onPress={onBack} className="p-2 -m-2">
+          <ArrowLeft size={24} className="text-foreground" />
+        </Pressable>
+        <Text className="text-lg font-semibold text-foreground">
+          여행 계획 만들기
+        </Text>
+        <View className="w-10" />
+      </View>
+
+      {/* Content */}
       {isGenerating ? (
         <View className="flex-1 justify-center items-center gap-4">
           <ActivityIndicator size="large" color="hsl(var(--primary))" />

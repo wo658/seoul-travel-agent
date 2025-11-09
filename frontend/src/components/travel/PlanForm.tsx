@@ -18,6 +18,8 @@ export function PlanForm({ onSubmit, isLoading }: PlanFormProps) {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  console.log('[PlanForm] Rendering, isLoading:', isLoading);
+
   const handleInterestToggle = (interest: string) => {
     setSelectedInterests((prev) =>
       prev.includes(interest)
