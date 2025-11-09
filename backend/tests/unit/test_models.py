@@ -84,49 +84,48 @@ class TestTravelPlanModel:
         assert mock_travel_plan.user.email == mock_user.email
 
 
-class TestVenueModel:
-    """Test Venue model."""
+class TestTouristAttractionModel:
+    """Test TouristAttraction model."""
 
-    def test_create_venue(self, test_db_session):
-        """Test creating a venue."""
-        from app.venue.models import Venue
+    def test_create_tourist_attraction(self, test_db_session):
+        """Test creating a tourist attraction."""
+        from app.tourist_attraction.models import TouristAttraction
 
-        venue = Venue(
-            external_id="12345",
-            category="attraction",
-            name="Gyeongbokgung Palace",
-            address="서울특별시 종로구",
-            new_address="서울특별시 종로구 새주소",
-            x_coord=127.0,
-            y_coord=37.5,
-            phone="02-123-4567",
-            website="https://example.com",
-            operating_hours="09:00-18:00",
-            business_status="active",
+        attraction = TouristAttraction(
+            name="경복궁",
+            category="관광지",
+            road_address="서울특별시 종로구 사직로 161",
+            latitude=37.578840,
+            longitude=126.977000,
+            phone="02-3700-3900",
+            introduction="조선시대 궁궐",
         )
-        test_db_session.add(venue)
+        test_db_session.add(attraction)
         test_db_session.commit()
-        test_db_session.refresh(venue)
+        test_db_session.refresh(attraction)
 
-        assert venue.id is not None
-        assert venue.external_id == "12345"
-        assert venue.category == "attraction"
-        assert venue.name == "Gyeongbokgung Palace"
-        assert venue.created_at is not None
+        assert attraction.id is not None
+        assert attraction.name == "경복궁"
+        assert attraction.category == "관광지"
+        assert attraction.latitude == 37.578840
+        assert attraction.longitude == 126.977000
+        assert attraction.created_at is not None
 
-    def test_venue_with_extra_info(self, test_db_session):
-        """Test venue with extra info JSON."""
-        from app.venue.models import Venue
+    def test_tourist_attraction_with_facilities(self, test_db_session):
+        """Test tourist attraction with facility information."""
+        from app.tourist_attraction.models import TouristAttraction
 
-        venue = Venue(
-            external_id="67890",
-            category="restaurant",
-            name="Korean BBQ Restaurant",
-            extra_info={"representative_menu": "갈비", "price_range": "30000-50000"},
+        attraction = TouristAttraction(
+            name="남산공원",
+            category="관광지",
+            latitude=37.551168,
+            longitude=126.988227,
+            public_facilities="화장실, 주차장",
+            cultural_facilities="전망대",
         )
-        test_db_session.add(venue)
+        test_db_session.add(attraction)
         test_db_session.commit()
-        test_db_session.refresh(venue)
+        test_db_session.refresh(attraction)
 
-        assert venue.extra_info["representative_menu"] == "갈비"
-        assert venue.extra_info["price_range"] == "30000-50000"
+        assert attraction.public_facilities == "화장실, 주차장"
+        assert attraction.cultural_facilities == "전망대"

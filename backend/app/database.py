@@ -33,7 +33,6 @@ def create_tables():
     # Import all models to register them with Base
     from app.auth.models import User  # noqa
     from app.plan.models import TravelPlan  # noqa
-    # from app.ai.models import Conversation, Message  # noqa  # TODO: Create AI models
-    from app.venue.models import Venue  # noqa
+    from app.tourist_attraction.models import TouristAttraction  # noqa
 
     Base.metadata.create_all(bind=engine)
