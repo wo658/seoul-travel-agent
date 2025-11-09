@@ -8,11 +8,12 @@ import {
   ConversationListScreen,
   TravelPlanInputScreen,
   PlanReviewScreen,
+  PlanViewerDemoScreen,
 } from '@/screens';
 import { GeneratePlanApiResponse, TravelPlan } from '@/types';
 import './global.css';
 
-type Screen = 'home' | 'conversations' | 'chat' | 'planInput' | 'planReview';
+type Screen = 'home' | 'conversations' | 'chat' | 'planInput' | 'planReview' | 'demo';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
@@ -66,6 +67,10 @@ export default function App() {
     setCurrentScreen('planInput');
   };
 
+  const handleViewDemo = () => {
+    setCurrentScreen('demo');
+  };
+
   return (
     <SafeAreaProvider>
       <ChatProvider>
@@ -74,6 +79,7 @@ export default function App() {
             onStartChat={handleStartChat}
             onStartPlanning={handleStartPlanning}
             onViewConversations={handleViewConversations}
+            onViewDemo={handleViewDemo}
           />
         )}
 
@@ -109,6 +115,10 @@ export default function App() {
             onSave={handleSavePlan}
             onRegenerate={handleRegeneratePlan}
           />
+        )}
+
+        {currentScreen === 'demo' && (
+          <PlanViewerDemoScreen onBack={handleBackToHome} />
         )}
       </ChatProvider>
     </SafeAreaProvider>

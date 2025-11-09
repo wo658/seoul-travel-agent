@@ -45,4 +45,5 @@ export {
   RefreshCw,
   GripVertical,
   Lock,
+  Eye,
 } from 'lucide-react-native';
