@@ -141,3 +141,6 @@ export interface ConversationListItem {
   created_at: string;
   updated_at: string;
 }
+
+// Re-export plan viewer types
+export * from './plan-viewer';
