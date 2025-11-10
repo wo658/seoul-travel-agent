@@ -1,19 +1,58 @@
 /**
  * Type definitions for the application
+ *
+ * This file imports types from the auto-generated OpenAPI schema (api.d.ts)
+ * to ensure Single Source of Truth with the backend API.
+ *
+ * 🚫 DO NOT manually define API request/response types here!
+ * ✅ All API types must come from the OpenAPI schema
  */
 
 // ============================================================================
-// Travel Plan Types
+// Import auto-generated API types
 // ============================================================================
 
-export interface PlanFormData {
-  user_request: string;
-  start_date: string; // YYYY-MM-DD
-  end_date: string; // YYYY-MM-DD
-  budget?: number;
-  interests: string[];
-}
+import type { components, operations } from './api';
 
+// ============================================================================
+// API Request/Response Types (from OpenAPI schema)
+// ============================================================================
+
+// ----- Travel Plan Generation -----
+export type GenerateTravelPlanRequest = components['schemas']['GenerateTravelPlanRequest'];
+export type PlanFormData = GenerateTravelPlanRequest; // Alias for form compatibility
+
+// ----- Travel Plan Review/Modification -----
+export type ReviewTravelPlanRequest = components['schemas']['ReviewTravelPlanRequest'];
+export type ModifyPlanRequest = ReviewTravelPlanRequest; // Backward compatibility alias
+
+// ----- API Responses -----
+export type TravelPlanApiResponse = components['schemas']['app__ai__ai_schemas__TravelPlanResponse'];
+export type GeneratePlanApiResponse = TravelPlanApiResponse; // Backward compatibility alias
+
+// ----- Plan CRUD Operations -----
+export type TravelPlanCreate = components['schemas']['TravelPlanCreate'];
+export type TravelPlanUpdate = components['schemas']['TravelPlanUpdate'];
+export type PlanResponse = components['schemas']['app__plan__plan_schemas__TravelPlanResponse'];
+
+// ----- Authentication -----
+export type UserCreate = components['schemas']['UserCreate'];
+export type UserLogin = components['schemas']['UserLogin'];
+export type UserResponse = components['schemas']['UserResponse'];
+export type Token = components['schemas']['Token'];
+
+// ----- Validation Errors -----
+export type ValidationError = components['schemas']['ValidationError'];
+export type HTTPValidationError = components['schemas']['HTTPValidationError'];
+
+// ============================================================================
+// Frontend-specific Travel Plan Types
+// These types represent the frontend's internal data structure
+// ============================================================================
+
+/**
+ * Activity within a day's itinerary
+ */
 export interface Activity {
   time: string; // HH:MM format
   venue_name: string;
@@ -29,6 +68,9 @@ export interface Activity {
   };
 }
 
+/**
+ * Single day's itinerary
+ */
 export interface DayItinerary {
   day: number;
   date: string; // YYYY-MM-DD
@@ -37,6 +79,9 @@ export interface DayItinerary {
   daily_cost: number;
 }
 
+/**
+ * Accommodation information
+ */
 export interface Accommodation {
   name: string;
   type: string;
@@ -47,6 +92,9 @@ export interface Accommodation {
   description?: string;
 }
 
+/**
+ * Complete travel plan structure (frontend representation)
+ */
 export interface TravelPlan {
   id?: string;
   title: string;
@@ -58,92 +106,12 @@ export interface TravelPlan {
   created_at?: string;
 }
 
-export interface GeneratePlanApiRequest {
-  user_request: string;
-  start_date: string;
-  end_date: string;
-  budget?: number;
-  interests?: string[];
-}
-
-export interface GeneratePlanApiResponse {
-  plan: TravelPlan;
-}
-
-export interface ModifyPlanRequest {
-  user_feedback: string;
-  iteration: number;
-}
-
-export interface ModifyPlanResponse {
-  plan: TravelPlan;
-}
-
 // ============================================================================
-// Chat Types
+// Re-export frontend-specific types
 // ============================================================================
 
-export interface Message {
-  id: string;
-  conversation_id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  model?: string;
-  tokens_used?: number;
-  finish_reason?: string;
-  created_at: string;
-}
-
-export interface Conversation {
-  id: string;
-  user_id: string;
-  travel_plan_id?: string;
-  title: string;
-  status: 'active' | 'completed' | 'archived';
-  created_at: string;
-  updated_at: string;
-  messages: Message[];
-  travel_plan?: TravelPlan;
-}
-
-export interface CreateConversationRequest {
-  initial_message: string;
-}
-
-export interface CreateConversationResponse {
-  conversation_id: string;
-  message: Message;
-}
-
-export interface SendMessageRequest {
-  content: string;
-}
-
-export interface StreamChunk {
-  token: string;
-  finish_reason?: string;
-}
-
-export interface GeneratePlanRequest {
-  preferences?: Record<string, any>;
-}
-
-export interface GeneratePlanResponse {
-  plan_id: string;
-  itinerary: any; // TODO: Define Itinerary type
-}
-
-export interface ConversationListItem {
-  id: string;
-  title: string;
-  status: 'active' | 'completed' | 'archived';
-  last_message?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Re-export plan viewer types
+// Plan viewer types (드래그앤드롭, 편집 기능)
 export * from './plan-viewer';
 
-// Re-export planner API types
+// Planner API response types (백엔드 실제 응답 구조)
 export * from './planner-api';

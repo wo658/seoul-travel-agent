@@ -7,7 +7,9 @@
     "dev": "expo start --clear",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "types:generate": "openapi-typescript http://localhost:8000/api/openapi.json -o src/types/api.d.ts",
+    "types:watch": "openapi-typescript http://localhost:8000/api/openapi.json -o src/types/api.d.ts --watch"
   },
   "dependencies": {
     "@expo/metro-runtime": "^6.1.2",
@@ -40,6 +42,7 @@
     "@types/react-native": "^0.72.8",
     "babel-plugin-module-resolver": "^5.0.2",
     "babel-preset-expo": "^54.0.6",
+    "openapi-typescript": "^7.10.1",
     "typescript": "^5.9.3"
   }
 }

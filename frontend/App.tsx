@@ -32,7 +32,8 @@ export default function App() {
 
   const handlePlanGenerated = (response: GeneratePlanApiResponse) => {
     console.log('[App] Plan generated:', response);
-    setCurrentPlan(response.plan);
+    // Backend returns plan as generic object, cast to TravelPlan
+    setCurrentPlan(response.plan as unknown as TravelPlan);
     setCurrentScreen('planViewer');
   };
 
