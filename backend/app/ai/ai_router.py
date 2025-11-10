@@ -14,6 +14,7 @@ from app.ai.ai_schemas import (
 )
 from app.ai.ai_service import ai_service
 from app.database import get_db
+from app.plan import plan_service
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,9 @@ router = APIRouter()
 @router.post("/plans/generate", response_model=TravelPlanResponse)
 async def generate_travel_plan(
     request: GenerateTravelPlanRequest,
+    user_id: int,  # TODO: Replace with authenticated user from dependency
     db: Session = Depends(get_db),
+    save_to_db: bool = True,  # Option to save plan to database
 ):
     """Generate initial travel plan using Planner Agent.
 
@@ -33,9 +36,19 @@ async def generate_travel_plan(
     2. Fetch relevant venues using vector search (SEO-33)
     3. Generate comprehensive day-by-day itinerary
     4. Validate budget and time constraints
+    5. Optionally save the plan to database (default: True)
+
+    Args:
+        request: Travel plan generation request
+        user_id: User ID (temporary: will be replaced with authentication)
+        db: Database session
+        save_to_db: Whether to save the generated plan to database
+
+    Returns:
+        TravelPlanResponse with generated plan and optional plan_id
     """
     logger.info("🚀 [API] POST /plans/generate - Request received")
-    logger.debug(f"📥 Request: dates={request.start_date} to {request.end_date}, budget={request.budget}, interests={request.interests}")
+    logger.debug(f"📥 Request: dates={request.start_date} to {request.end_date}, budget={request.budget}, interests={request.interests}, save_to_db={save_to_db}")
 
     try:
         plan = await ai_service.generate_initial_plan(
@@ -46,7 +59,23 @@ async def generate_travel_plan(
         )
 
         logger.info("✅ [API] Plan generation completed successfully")
-        return TravelPlanResponse(plan=plan)
+
+        # Optionally save to database
+        plan_id = None
+        if save_to_db:
+            try:
+                saved_plan = plan_service.create_plan(
+                    db=db,
+                    user_id=user_id,
+                    planner_data=plan
+                )
+                plan_id = saved_plan.id
+                logger.info(f"💾 [API] Plan saved to database with ID: {plan_id}")
+            except Exception as save_error:
+                logger.error(f"⚠️ [API] Failed to save plan to database: {save_error}")
+                # Continue even if save fails - plan generation was successful
+
+        return TravelPlanResponse(plan=plan, plan_id=plan_id)
 
     except ValueError as e:
         logger.error(f"❌ [API] Validation error: {e}")

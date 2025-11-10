@@ -41,12 +41,12 @@ class TestPlanRouterCreate:
         }
 
         response = client.post(
-            "/plans",
+            "/api/plans",
             json=plan_data,
             params={"user_id": mock_user.id}  # 임시: 나중에 인증으로 대체
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["title"] == "API 테스트 플랜"
         assert data["user_id"] == mock_user.id
@@ -72,7 +72,7 @@ class TestPlanRouterCreate:
         }
 
         response = client.post(
-            "/plans",
+            "/api/plans",
             json=plan_data,
             params={"user_id": mock_user.id}
         )
@@ -89,7 +89,7 @@ class TestPlanRouterCreate:
         }
 
         response = client.post(
-            "/plans",
+            "/api/plans",
             json=invalid_data,
             params={"user_id": mock_user.id}
         )
@@ -103,7 +103,7 @@ class TestPlanRouterList:
     def test_list_plans_endpoint(self, client, test_db_session, mock_user, mock_travel_plan):
         """Test listing all plans for a user."""
         response = client.get(
-            "/plans",
+            "/api/plans",
             params={"user_id": mock_user.id}
         )
 
@@ -127,7 +127,7 @@ class TestPlanRouterList:
         test_db_session.refresh(new_user)
 
         response = client.get(
-            "/plans",
+            "/api/plans",
             params={"user_id": new_user.id}
         )
 
@@ -159,7 +159,7 @@ class TestPlanRouterList:
         test_db_session.commit()
 
         response = client.get(
-            "/plans",
+            "/api/plans",
             params={"user_id": mock_user.id}
         )
 
@@ -174,7 +174,7 @@ class TestPlanRouterGet:
     def test_get_plan_endpoint(self, client, test_db_session, mock_user, mock_travel_plan):
         """Test retrieving a specific plan."""
         response = client.get(
-            f"/plans/{mock_travel_plan.id}",
+            f"/api/plans/{mock_travel_plan.id}",
             params={"user_id": mock_user.id}
         )
 
@@ -225,7 +225,7 @@ class TestPlanRouterGet:
         test_db_session.refresh(full_plan)
 
         response = client.get(
-            f"/plans/{full_plan.id}",
+            f"/api/plans/{full_plan.id}",
             params={"user_id": mock_user.id}
         )
 
@@ -247,7 +247,7 @@ class TestPlanRouterUpdate:
         }
 
         response = client.patch(
-            f"/plans/{mock_travel_plan.id}",
+            f"/api/plans/{mock_travel_plan.id}",
             json=update_data,
             params={"user_id": mock_user.id}
         )
@@ -267,7 +267,7 @@ class TestPlanRouterUpdate:
         }
 
         response = client.patch(
-            f"/plans/{mock_travel_plan.id}",
+            f"/api/plans/{mock_travel_plan.id}",
             json=update_data,
             params={"user_id": mock_user.id}
         )
@@ -311,7 +311,7 @@ class TestPlanRouterUpdate:
         update_data = {"itinerary": new_itinerary}
 
         response = client.patch(
-            f"/plans/{mock_travel_plan.id}",
+            f"/api/plans/{mock_travel_plan.id}",
             json=update_data,
             params={"user_id": mock_user.id}
         )
@@ -329,7 +329,7 @@ class TestPlanRouterDelete:
         plan_id = mock_travel_plan.id
 
         response = client.delete(
-            f"/plans/{plan_id}",
+            f"/api/plans/{plan_id}",
             params={"user_id": mock_user.id}
         )
 
@@ -339,7 +339,7 @@ class TestPlanRouterDelete:
 
         # Verify plan is deleted
         get_response = client.get(
-            f"/plans/{plan_id}",
+            f"/api/plans/{plan_id}",
             params={"user_id": mock_user.id}
         )
         assert get_response.status_code == 404

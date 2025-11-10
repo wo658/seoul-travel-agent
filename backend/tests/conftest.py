@@ -16,6 +16,11 @@ sys.path.insert(0, str(backend_dir))
 from app.database import Base, get_db
 from app.main import create_application
 
+# Import all models to ensure they are registered with Base metadata
+from app.auth.models import User  # noqa: F401
+from app.plan.models import TravelPlan  # noqa: F401
+from app.tourist_attraction.models import TouristAttraction  # noqa: F401
+
 
 @pytest.fixture(scope="session")
 def test_db_engine():
@@ -39,6 +44,10 @@ def test_db_session(test_db_engine):
         yield session
     finally:
         session.rollback()
+        # Clean up all data after each test
+        for table in reversed(Base.metadata.sorted_tables):
+            session.execute(table.delete())
+        session.commit()
         session.close()
 
 
