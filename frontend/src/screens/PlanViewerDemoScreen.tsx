@@ -1,44 +1,52 @@
 import React from 'react';
-import { View, ScrollView, Pressable } from 'react-native';
-import { Text } from '@/components/ui';
+import { View, ScrollView, Pressable, Alert } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import { PlanSummary, PlanTimeline } from '@/components/travel';
-import { TravelPlan } from '@/types';
-import { ArrowLeft, Save, MoreVertical } from '@/lib/icons';
+import { ScreenHeader } from '@/components/navigation';
+import { Save, MoreVertical } from '@/lib/icons';
+import type { RootStackParamList } from '@/navigation';
 
 /**
  * 여행 계획 뷰어 화면
  * 생성된 여행 계획을 확인하고 저장할 수 있습니다.
  */
 
-interface PlanViewerDemoScreenProps {
-  plan: TravelPlan;
-  onBack: () => void;
-  onSave?: (plan: TravelPlan) => void;
-}
+type PlanViewerDemoScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'PlanViewer'
+>;
 
-export function PlanViewerDemoScreen({
-  plan,
-  onBack,
-  onSave,
-}: PlanViewerDemoScreenProps) {
+type PlanViewerDemoScreenRouteProp = RouteProp<RootStackParamList, 'PlanViewer'>;
+
+export function PlanViewerDemoScreen() {
+  const navigation = useNavigation<PlanViewerDemoScreenNavigationProp>();
+  const route = useRoute<PlanViewerDemoScreenRouteProp>();
+  const { plan } = route.params;
+
   const handleSave = () => {
-    if (onSave) {
-      onSave(plan);
-    }
+    // TODO: Implement plan saving to backend
+    Alert.alert('성공', '계획이 저장되었습니다!', [
+      {
+        text: '확인',
+        onPress: () => navigation.navigate('Home'),
+      },
+    ]);
+  };
+
+  const handleMoreOptions = () => {
+    // TODO: Implement more options menu
+    Alert.alert('더보기', '추가 옵션이 곧 제공됩니다.');
   };
 
   return (
     <View className="flex-1 bg-background">
-      {/* Header */}
-      <View className="bg-card border-b border-border px-4 py-3 flex flex-row items-center justify-between">
-        <Pressable onPress={onBack} className="p-2 -m-2">
-          <ArrowLeft size={24} className="text-foreground" />
-        </Pressable>
-        <Text className="text-lg font-semibold text-foreground">여행 계획</Text>
-        <Pressable className="p-2 -m-2">
-          <MoreVertical size={24} className="text-foreground" />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title="여행 계획"
+        rightIcon={MoreVertical}
+        onRightPress={handleMoreOptions}
+      />
 
       {/* Content */}
       <ScrollView className="flex-1">
@@ -55,16 +63,14 @@ export function PlanViewerDemoScreen({
       </ScrollView>
 
       {/* Save Button */}
-      {onSave && (
-        <View className="absolute bottom-6 right-4">
-          <Pressable
-            onPress={handleSave}
-            className="w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg active:scale-95"
-          >
-            <Save size={24} className="text-primary-foreground" />
-          </Pressable>
-        </View>
-      )}
+      <View className="absolute bottom-6 right-4">
+        <Pressable
+          onPress={handleSave}
+          className="w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg active:scale-95"
+        >
+          <Save size={24} className="text-primary-foreground" />
+        </Pressable>
+      </View>
     </View>
   );
 }

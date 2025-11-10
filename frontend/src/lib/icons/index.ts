@@ -46,4 +46,11 @@ export {
   GripVertical,
   Lock,
   Eye,
+  Globe,
+  Palette,
+  Shield,
+  HelpCircle,
+  LogOut,
 } from 'lucide-react-native';
+
+export type { LucideIcon } from 'lucide-react-native';

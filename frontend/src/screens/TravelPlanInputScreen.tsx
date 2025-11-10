@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
-import { View, ActivityIndicator, Pressable } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PlanForm } from '@/components/travel';
+import { ScreenHeader } from '@/components/navigation';
 import { Text } from '@/components/ui';
-import { PlanFormData, GeneratePlanApiResponse } from '@/types';
+import { PlanFormData, TravelPlan } from '@/types';
 import { generatePlan } from '@/services/api/chat';
-import { ArrowLeft } from '@/lib/icons';
+import type { RootStackParamList } from '@/navigation';
 
-interface TravelPlanInputScreenProps {
-  onPlanGenerated: (plan: GeneratePlanApiResponse) => void;
-  onBack: () => void;
-}
+type TravelPlanInputScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'PlanInput'
+>;
 
-export function TravelPlanInputScreen({
-  onPlanGenerated,
-  onBack,
-}: TravelPlanInputScreenProps) {
+export function TravelPlanInputScreen() {
+  const navigation = useNavigation<TravelPlanInputScreenNavigationProp>();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +32,10 @@ export function TravelPlanInputScreen({
         interests: formData.interests,
       });
 
-      onPlanGenerated(response);
+      // Navigate to plan viewer with the generated plan
+      navigation.navigate('PlanViewer', {
+        plan: response.plan as unknown as TravelPlan,
+      });
     } catch (err) {
       console.error('Failed to generate plan:', err);
       setError(
@@ -48,16 +52,7 @@ export function TravelPlanInputScreen({
 
   return (
     <View className="flex-1 bg-background">
-      {/* Header */}
-      <View className="bg-card border-b border-border px-4 py-3 flex flex-row items-center justify-between">
-        <Pressable onPress={onBack} className="p-2 -m-2">
-          <ArrowLeft size={24} className="text-foreground" />
-        </Pressable>
-        <Text className="text-lg font-semibold text-foreground">
-          여행 계획 만들기
-        </Text>
-        <View className="w-10" />
-      </View>
+      <ScreenHeader title="여행 계획 만들기" />
 
       {/* Content */}
       {isGenerating ? (

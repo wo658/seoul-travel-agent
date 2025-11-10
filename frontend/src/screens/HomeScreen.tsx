@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import React from 'react';
+import { View, ScrollView, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   buttonTextVariants,
@@ -9,158 +12,171 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
-  Input,
   Text,
-  Separator,
 } from '@/components/ui';
-import { MapPin, Calendar, Sparkles, Clock, TrendingUp, Loader2, Eye } from '@/lib/icons/';
+import { MapPin, Calendar, Sparkles, Clock, TrendingUp, ArrowRight } from '@/lib/icons/';
+import type { RootStackParamList } from '@/navigation';
 
-export interface HomeScreenProps {
-  onStartPlanning: () => void;
-}
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'HomeTab'>;
 
-export function HomeScreen({ onStartPlanning }: HomeScreenProps) {
-  const [destination, setDestination] = useState('');
-  const [duration, setDuration] = useState('');
+export function HomeScreen() {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
+  const { t } = useTranslation();
+
+  const handleStartPlanning = () => {
+    navigation.navigate('PlanInput' as any);
+  };
 
   return (
     <View className="flex-1 bg-background">
       <StatusBar style="auto" />
 
       <ScrollView className="flex-1">
-        <View className="p-6 pt-12 gap-6">
-          {/* Header */}
-          <View className="gap-2">
-            <Text className="text-4xl font-bold text-foreground">
-              Seoul AI Travel Planner
+        <View className="p-6 pt-16 gap-8">
+          {/* Hero Section */}
+          <View className="gap-3">
+            <Text className="text-5xl font-bold text-foreground">
+              {t('home.title')}
             </Text>
-            <Text className="text-base text-muted-foreground">
-              여행 계획을 AI와 함께
+            <Text className="text-4xl font-bold text-primary">
+              {t('home.subtitle')}
+            </Text>
+            <Text className="text-lg text-muted-foreground mt-2">
+              {t('home.description')}
             </Text>
           </View>
 
-          <Separator />
+          {/* CTA Card */}
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <CardContent className="gap-4 pt-6">
+              <View className="gap-2">
+                <Text className="text-2xl font-bold text-foreground">
+                  {t('home.ctaTitle')}
+                </Text>
+                <Text className="text-base text-muted-foreground">
+                  {t('home.ctaDescription')}
+                </Text>
+              </View>
 
-          {/* Welcome Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>환영합니다!</CardTitle>
-              <CardDescription>
-                AI 기반 서울 여행 플래너로 완벽한 여행을 계획하세요
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="gap-3">
-              <Button size="lg" onPress={onStartPlanning}>
+              <Button size="lg" onPress={handleStartPlanning} className="mt-2">
                 <View className="flex-row items-center gap-2">
-                  <Calendar className="text-primary-foreground" size={20} />
+                  <Calendar className="text-primary-foreground" size={22} />
                   <Text className={buttonTextVariants({ variant: 'default', size: 'lg' })}>
-                    여행 계획 만들기
+                    {t('home.createPlan')}
                   </Text>
+                  <ArrowRight className="text-primary-foreground" size={20} />
                 </View>
               </Button>
-              <Text className="text-xs text-center text-muted-foreground">
-                날짜, 예산, 관심사를 입력하여 맞춤 계획을 생성하세요
-              </Text>
             </CardContent>
           </Card>
 
-          {/* Features Section */}
-          <View className="gap-4">
-            <Text className="text-2xl font-semibold text-foreground">
-              주요 기능
-            </Text>
-
-            <Card>
-              <CardHeader>
-                <View className="flex-row items-center gap-2">
-                  <Sparkles className="text-primary" size={20} />
-                  <CardTitle>AI 추천</CardTitle>
-                </View>
-                <CardDescription>
-                  맞춤형 여행지와 일정 추천
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <View className="flex-row items-center gap-2">
-                  <TrendingUp className="text-primary" size={20} />
-                  <CardTitle>실시간 정보</CardTitle>
-                </View>
-                <CardDescription>
-                  최신 관광 정보와 교통 정보 제공
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <View className="flex-row items-center gap-2">
-                  <Clock className="text-primary" size={20} />
-                  <CardTitle>일정 관리</CardTitle>
-                </View>
-                <CardDescription>
-                  효율적인 여행 일정 자동 생성
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </View>
-
-          <Separator />
-
-          {/* Action Buttons Examples */}
+          {/* Features Grid */}
           <View className="gap-3">
-            <Text className="text-xl font-semibold text-foreground">
-              버튼 스타일 가이드
+            <Text className="text-2xl font-bold text-foreground mb-1">
+              {t('home.featuresTitle')}
             </Text>
 
-            <Button variant="default" size="lg">
-              <Text className={buttonTextVariants({ variant: 'default', size: 'lg' })}>
-                Primary Button
-              </Text>
-            </Button>
+            <View className="gap-3">
+              <Pressable
+                onPress={handleStartPlanning}
+                className="active:opacity-70"
+              >
+                <Card>
+                  <CardHeader>
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-3">
+                        <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center">
+                          <Sparkles className="text-primary" size={24} />
+                        </View>
+                        <View className="flex-1">
+                          <CardTitle>{t('home.aiRecommendation')}</CardTitle>
+                          <CardDescription className="mt-1">
+                            {t('home.aiRecommendationDesc')}
+                          </CardDescription>
+                        </View>
+                      </View>
+                      <ArrowRight className="text-muted-foreground" size={20} />
+                    </View>
+                  </CardHeader>
+                </Card>
+              </Pressable>
 
-            <Button variant="secondary" size="lg">
-              <Text className={buttonTextVariants({ variant: 'secondary', size: 'lg' })}>
-                Secondary Button
-              </Text>
-            </Button>
+              <Pressable
+                onPress={handleStartPlanning}
+                className="active:opacity-70"
+              >
+                <Card>
+                  <CardHeader>
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-3">
+                        <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center">
+                          <Clock className="text-primary" size={24} />
+                        </View>
+                        <View className="flex-1">
+                          <CardTitle>{t('home.smartSchedule')}</CardTitle>
+                          <CardDescription className="mt-1">
+                            {t('home.smartScheduleDesc')}
+                          </CardDescription>
+                        </View>
+                      </View>
+                      <ArrowRight className="text-muted-foreground" size={20} />
+                    </View>
+                  </CardHeader>
+                </Card>
+              </Pressable>
 
-            <Button variant="destructive" size="lg">
-              <Text className={buttonTextVariants({ variant: 'destructive', size: 'lg' })}>
-                Destructive Button
-              </Text>
-            </Button>
+              <Pressable
+                onPress={handleStartPlanning}
+                className="active:opacity-70"
+              >
+                <Card>
+                  <CardHeader>
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-3">
+                        <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center">
+                          <TrendingUp className="text-primary" size={24} />
+                        </View>
+                        <View className="flex-1">
+                          <CardTitle>{t('home.realTimeInfo')}</CardTitle>
+                          <CardDescription className="mt-1">
+                            {t('home.realTimeInfoDesc')}
+                          </CardDescription>
+                        </View>
+                      </View>
+                      <ArrowRight className="text-muted-foreground" size={20} />
+                    </View>
+                  </CardHeader>
+                </Card>
+              </Pressable>
 
-            <Button variant="outline" size="lg">
-              <Text className={buttonTextVariants({ variant: 'outline', size: 'lg' })}>
-                Outline Button
-              </Text>
-            </Button>
-
-            <Button variant="ghost" size="lg">
-              <Text className={buttonTextVariants({ variant: 'ghost', size: 'lg' })}>
-                Ghost Button
-              </Text>
-            </Button>
-
-            <Button variant="link" size="lg">
-              <Text className={buttonTextVariants({ variant: 'link', size: 'lg' })}>
-                Link Button
-              </Text>
-            </Button>
-
-            <Button size="lg" disabled>
-              <View className="flex-row items-center gap-2">
-                <Loader2 className="text-primary-foreground animate-spin" size={16} />
-                <Text className={buttonTextVariants({ variant: 'default', size: 'lg' })}>
-                  Loading...
-                </Text>
-              </View>
-            </Button>
+              <Pressable
+                onPress={handleStartPlanning}
+                className="active:opacity-70"
+              >
+                <Card>
+                  <CardHeader>
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-3">
+                        <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center">
+                          <MapPin className="text-primary" size={24} />
+                        </View>
+                        <View className="flex-1">
+                          <CardTitle>{t('home.spotGuide')}</CardTitle>
+                          <CardDescription className="mt-1">
+                            {t('home.spotGuideDesc')}
+                          </CardDescription>
+                        </View>
+                      </View>
+                      <ArrowRight className="text-muted-foreground" size={20} />
+                    </View>
+                  </CardHeader>
+                </Card>
+              </Pressable>
+            </View>
           </View>
+
+          {/* Bottom spacing */}
+          <View className="h-8" />
         </View>
       </ScrollView>
     </View>
