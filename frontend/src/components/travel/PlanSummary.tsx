@@ -13,6 +13,22 @@ export function PlanSummary({ plan }: PlanSummaryProps) {
     return new Intl.NumberFormat('ko-KR').format(cost);
   };
 
+  // Guard against invalid plan data
+  if (!plan || !plan.days || plan.days.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">여행 계획 없음</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Text className="text-sm text-muted-foreground">
+            여행 계획 데이터를 불러올 수 없습니다.
+          </Text>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -39,7 +55,7 @@ export function PlanSummary({ plan }: PlanSummaryProps) {
             <MapPin size={20} className="text-primary" />
             <Text className="text-sm text-muted-foreground">장소</Text>
             <Text className="text-base font-bold text-foreground">
-              {plan.days.reduce((sum, day) => sum + day.activities.length, 0)}개
+              {plan.days?.reduce((sum, day) => sum + (day.activities?.length || 0), 0) || 0}개
             </Text>
           </View>
         </View>

@@ -22,6 +22,19 @@ export function PlanTimeline({ days }: PlanTimelineProps) {
     return `${month}월 ${day}일 (${dayOfWeek})`;
   };
 
+  // Guard against invalid days data
+  if (!days || days.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <Text className="text-center text-muted-foreground">
+            일정 데이터가 없습니다.
+          </Text>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <View className="gap-4">
       {days.map((dayItinerary) => (
@@ -50,9 +63,13 @@ export function PlanTimeline({ days }: PlanTimelineProps) {
             )}
           </CardHeader>
           <CardContent className="pt-0">
-            {dayItinerary.activities.map((activity, index) => (
+            {dayItinerary.activities?.map((activity, index) => (
               <ActivityCard key={index} activity={activity} />
-            ))}
+            )) || (
+              <Text className="text-sm text-muted-foreground text-center py-4">
+                활동이 없습니다.
+              </Text>
+            )}
           </CardContent>
         </Card>
       ))}

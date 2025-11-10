@@ -24,6 +24,7 @@ export {
   Plus,
   Minus,
   Edit,
+  Edit3,
   Trash2,
   Filter,
   ArrowLeft,
@@ -42,4 +43,14 @@ export {
   DollarSign,
   Save,
   RefreshCw,
+  GripVertical,
+  Lock,
+  Eye,
+  Globe,
+  Palette,
+  Shield,
+  HelpCircle,
+  LogOut,
 } from 'lucide-react-native';
+
+export type { LucideIcon } from 'lucide-react-native';

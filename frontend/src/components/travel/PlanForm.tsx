@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import { Button, buttonTextVariants, Input, TextArea, Text } from '@/components/ui';
-import { InterestSelector } from './InterestSelector';
 import { DateRangePicker } from './DateRangePicker';
+import { InterestSelector } from './InterestSelector';
 import { PlanFormData } from '@/types';
 
 interface PlanFormProps {
@@ -17,6 +17,8 @@ export function PlanForm({ onSubmit, isLoading }: PlanFormProps) {
   const [budget, setBudget] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  console.log('[PlanForm] Rendering, isLoading:', isLoading);
 
   const handleInterestToggle = (interest: string) => {
     setSelectedInterests((prev) =>
@@ -67,7 +69,7 @@ export function PlanForm({ onSubmit, isLoading }: PlanFormProps) {
       user_request: userRequest.trim(),
       start_date: startDate,
       end_date: endDate,
-      budget: budget ? Number(budget) : undefined,
+      budget: budget ? Number(budget) : null,
       interests: selectedInterests,
     };
 
@@ -129,7 +131,7 @@ export function PlanForm({ onSubmit, isLoading }: PlanFormProps) {
         {/* Interest Selector */}
         <InterestSelector
           selectedInterests={selectedInterests}
-          onInterestToggle={handleInterestToggle}
+          onToggle={handleInterestToggle}
           error={errors.interests}
         />
 

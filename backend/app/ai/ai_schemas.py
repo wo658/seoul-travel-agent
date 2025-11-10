@@ -145,8 +145,8 @@ class GenerateTravelPlanRequest(BaseModel):
     user_request: str
     start_date: str  # YYYY-MM-DD
     end_date: str  # YYYY-MM-DD
-    budget: int  # Amount in KRW
-    interests: list[str]
+    budget: Optional[int] = None  # Amount in KRW (optional)
+    interests: list[str] = []  # Optional, defaults to empty list
 
 
 class TravelPlanResponse(BaseModel):

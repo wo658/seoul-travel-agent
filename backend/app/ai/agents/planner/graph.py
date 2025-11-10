@@ -20,11 +20,9 @@ def create_planner_graph() -> StateGraph:
     """Create and configure the planner agent graph.
 
     Flow:
-    START → collect_info → fetch_venues → generate_plan → validate
-                                                              ↓
-                                                          [valid] → END
-                                                              ↓
-                                                          [invalid] → generate_plan (retry max 3x)
+    START → collect_info → fetch_venues → generate_plan → END
+
+    Note: Validation step temporarily disabled
     """
     logger.info("🏗️ Creating planner graph")
 
@@ -35,28 +33,28 @@ def create_planner_graph() -> StateGraph:
     graph.add_node("collect_info", collect_info)
     graph.add_node("fetch_venues", fetch_venues)
     graph.add_node("generate_plan", generate_plan)
-    graph.add_node("validate", validate_plan)
-    logger.debug("📦 Added 4 nodes: collect_info, fetch_venues, generate_plan, validate")
+    # graph.add_node("validate", validate_plan)  # Temporarily disabled
+    logger.debug("📦 Added 3 nodes: collect_info, fetch_venues, generate_plan")
 
     # Define edges
     graph.add_edge(START, "collect_info")
     graph.add_edge("collect_info", "fetch_venues")
     graph.add_edge("fetch_venues", "generate_plan")
-    graph.add_edge("generate_plan", "validate")
+    graph.add_edge("generate_plan", END)  # Direct to END, bypassing validation
     logger.debug("🔗 Added sequential edges")
 
-    # Conditional routing: retry or end
-    graph.add_conditional_edges(
-        "validate",
-        should_retry,
-        {
-            "retry": "generate_plan",
-            "end": END,
-        },
-    )
-    logger.debug("🔀 Added conditional edges for retry logic")
+    # Conditional routing: retry or end (temporarily disabled)
+    # graph.add_conditional_edges(
+    #     "validate",
+    #     should_retry,
+    #     {
+    #         "retry": "generate_plan",
+    #         "end": END,
+    #     },
+    # )
+    # logger.debug("🔀 Added conditional edges for retry logic")
 
-    logger.info("✅ Planner graph created successfully")
+    logger.info("✅ Planner graph created successfully (validation disabled)")
     return graph
 
 

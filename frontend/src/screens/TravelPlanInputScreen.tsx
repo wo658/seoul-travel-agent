@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PlanForm } from '@/components/travel';
+import { ScreenHeader } from '@/components/navigation';
 import { Text } from '@/components/ui';
-import { PlanFormData, GeneratePlanApiResponse } from '@/types';
+import { PlanFormData, TravelPlan } from '@/types';
 import { generatePlan } from '@/services/api/chat';
+import type { RootStackParamList } from '@/navigation';
 
-interface TravelPlanInputScreenProps {
-  onPlanGenerated: (plan: GeneratePlanApiResponse) => void;
-  onBack: () => void;
-}
+type TravelPlanInputScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'PlanInput'
+>;
 
-export function TravelPlanInputScreen({
-  onPlanGenerated,
-  onBack,
-}: TravelPlanInputScreenProps) {
+export function TravelPlanInputScreen() {
+  const navigation = useNavigation<TravelPlanInputScreenNavigationProp>();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +32,10 @@ export function TravelPlanInputScreen({
         interests: formData.interests,
       });
 
-      onPlanGenerated(response);
+      // Navigate to plan viewer with the generated plan
+      navigation.navigate('PlanViewer', {
+        plan: response.plan as unknown as TravelPlan,
+      });
     } catch (err) {
       console.error('Failed to generate plan:', err);
       setError(
@@ -43,8 +48,13 @@ export function TravelPlanInputScreen({
     }
   };
 
+  console.log('[TravelPlanInputScreen] Rendering, isGenerating:', isGenerating, 'error:', error);
+
   return (
     <View className="flex-1 bg-background">
+      <ScreenHeader title="여행 계획 만들기" />
+
+      {/* Content */}
       {isGenerating ? (
         <View className="flex-1 justify-center items-center gap-4">
           <ActivityIndicator size="large" color="hsl(var(--primary))" />
