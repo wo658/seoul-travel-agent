@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import { Button, buttonTextVariants, Input, TextArea, Text } from '@/components/ui';
-import { InterestSelector } from './InterestSelector';
 import { DateRangePicker } from './DateRangePicker';
 import { PlanFormData } from '@/types';
 
@@ -128,12 +127,26 @@ export function PlanForm({ onSubmit, isLoading }: PlanFormProps) {
           </Text>
         </View>
 
-        {/* Interest Selector */}
-        <InterestSelector
-          selectedInterests={selectedInterests}
-          onInterestToggle={handleInterestToggle}
-          error={errors.interests}
-        />
+        {/* Interest Selector - Simplified */}
+        <View className="gap-3">
+          <Text className="text-base font-semibold text-foreground">
+            관심사 (선택사항)
+          </Text>
+          <TextArea
+            placeholder="관심사를 입력하세요 (예: 역사, 맛집, 쇼핑)"
+            value={selectedInterests.join(', ')}
+            onChangeText={(text) => setSelectedInterests(text.split(',').map(s => s.trim()).filter(Boolean))}
+            editable={!isLoading}
+            numberOfLines={3}
+            className={errors.interests ? 'border-destructive' : ''}
+          />
+          {errors.interests && (
+            <Text className="text-sm text-destructive">{errors.interests}</Text>
+          )}
+          <Text className="text-xs text-muted-foreground">
+            관심사를 쉼표로 구분하여 입력하세요
+          </Text>
+        </View>
 
         {/* Submit Button */}
         <Button

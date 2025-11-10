@@ -17,13 +17,10 @@ import {
 import { MapPin, Calendar, Sparkles, Clock, TrendingUp, Loader2, Eye } from '@/lib/icons/';
 
 export interface HomeScreenProps {
-  onStartChat?: () => void;
-  onStartPlanning?: () => void;
-  onViewConversations?: () => void;
-  onViewDemo?: () => void;
+  onStartPlanning: () => void;
 }
 
-export function HomeScreen({ onStartChat, onStartPlanning, onViewConversations, onViewDemo }: HomeScreenProps) {
+export function HomeScreen({ onStartPlanning }: HomeScreenProps) {
   const [destination, setDestination] = useState('');
   const [duration, setDuration] = useState('');
 
@@ -66,18 +63,6 @@ export function HomeScreen({ onStartChat, onStartPlanning, onViewConversations, 
                 날짜, 예산, 관심사를 입력하여 맞춤 계획을 생성하세요
               </Text>
             </CardContent>
-            <CardFooter className="gap-2">
-              <Button variant="outline" className="flex-1" onPress={onStartChat}>
-                <Text className={buttonTextVariants({ variant: 'outline' })}>
-                  채팅으로 시작
-                </Text>
-              </Button>
-              <Button variant="outline" className="flex-1" onPress={onViewConversations}>
-                <Text className={buttonTextVariants({ variant: 'outline' })}>
-                  대화 목록
-                </Text>
-              </Button>
-            </CardFooter>
           </Card>
 
           {/* Features Section */}
@@ -122,36 +107,6 @@ export function HomeScreen({ onStartChat, onStartPlanning, onViewConversations, 
               </CardHeader>
             </Card>
           </View>
-
-          <Separator />
-
-          {/* Demo Section */}
-          {onViewDemo && (
-            <Card className="border-2 border-primary">
-              <CardHeader>
-                <View className="flex-row items-center gap-2">
-                  <Eye className="text-primary" size={20} />
-                  <CardTitle>Plan Viewer 데모</CardTitle>
-                </View>
-                <CardDescription>
-                  타임라인 카드 뷰 + 채팅 하이브리드 인터페이스를 테스트해보세요
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="default" size="lg" onPress={onViewDemo}>
-                  <View className="flex-row items-center gap-2">
-                    <Eye className="text-primary-foreground" size={20} />
-                    <Text className={buttonTextVariants({ variant: 'default', size: 'lg' })}>
-                      데모 보기
-                    </Text>
-                  </View>
-                </Button>
-                <Text className="text-xs text-center text-muted-foreground mt-2">
-                  실제 Planner Agent 응답 형식의 목 데이터로 테스트
-                </Text>
-              </CardContent>
-            </Card>
-          )}
 
           <Separator />
 

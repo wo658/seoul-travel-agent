@@ -194,7 +194,24 @@ export async function generatePlan(
     throw new Error(`Failed to generate plan: ${errorText || response.statusText}`);
   }
 
-  return response.json();
+  const result = await response.json();
+
+  // Backend returns { plan: dict } where plan might be in PlannerResponse format
+  // We need to ensure it has the correct TravelPlan structure
+  if (result.plan && typeof result.plan === 'object') {
+    // If plan has 'type' and 'plan' properties, it's a PlannerResponse
+    if ('type' in result.plan && 'plan' in result.plan) {
+      const { mapPlannerResponseToTravelPlan } = await import('@/lib/utils/plan-mapper');
+      result.plan = mapPlannerResponseToTravelPlan(result.plan);
+    }
+
+    // Ensure plan has required TravelPlan fields
+    if (!result.plan.days && result.plan.itinerary) {
+      result.plan.days = result.plan.itinerary;
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -216,7 +233,24 @@ export async function modifyPlan(
     throw new Error(`Failed to modify plan: ${errorText || response.statusText}`);
   }
 
-  return response.json();
+  const result = await response.json();
+
+  // Backend returns { plan: dict } where plan might be in PlannerResponse format
+  // We need to ensure it has the correct TravelPlan structure
+  if (result.plan && typeof result.plan === 'object') {
+    // If plan has 'type' and 'plan' properties, it's a PlannerResponse
+    if ('type' in result.plan && 'plan' in result.plan) {
+      const { mapPlannerResponseToTravelPlan } = await import('@/lib/utils/plan-mapper');
+      result.plan = mapPlannerResponseToTravelPlan(result.plan);
+    }
+
+    // Ensure plan has required TravelPlan fields
+    if (!result.plan.days && result.plan.itinerary) {
+      result.plan.days = result.plan.itinerary;
+    }
+  }
+
+  return result;
 }
 
 /**
