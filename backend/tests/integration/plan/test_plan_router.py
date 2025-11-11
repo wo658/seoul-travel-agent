@@ -46,8 +46,6 @@ class TestPlanRouterCreate:
             params={"user_id": mock_user.id}  # 임시: 나중에 인증으로 대체
         )
 
-        if response.status_code != 201:
-            print(f"Error response: {response.json()}")
         assert response.status_code == 201
         data = response.json()
         assert data["title"] == "API 테스트 플랜"

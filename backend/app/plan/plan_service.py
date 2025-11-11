@@ -65,6 +65,37 @@ def _convert_planner_to_travel_plan_data(planner_plan: PlannerPlanCreate) -> Dic
 
 
 # ============================================================================
+# Database Query Helpers
+# ============================================================================
+
+
+def _get_plan_by_id(db: Session, plan_id: int) -> Optional[TravelPlan]:
+    """Get plan by ID from database.
+
+    Args:
+        db: Database session
+        plan_id: Plan ID
+
+    Returns:
+        TravelPlan instance or None if not found
+    """
+    return db.query(TravelPlan).filter(TravelPlan.id == plan_id).first()
+
+
+def _get_plans_by_user(db: Session, user_id: int) -> List[TravelPlan]:
+    """Get all plans for a user from database.
+
+    Args:
+        db: Database session
+        user_id: User ID
+
+    Returns:
+        List of TravelPlan instances
+    """
+    return db.query(TravelPlan).filter(TravelPlan.user_id == user_id).all()
+
+
+# ============================================================================
 # CRUD Operations
 # ============================================================================
 
@@ -128,7 +159,7 @@ def get_plan(
     Returns:
         TravelPlan instance or None if not found
     """
-    return db.query(TravelPlan).filter(TravelPlan.id == plan_id).first()
+    return _get_plan_by_id(db, plan_id)
 
 
 def list_plans(
@@ -144,7 +175,7 @@ def list_plans(
     Returns:
         List of TravelPlan instances
     """
-    return db.query(TravelPlan).filter(TravelPlan.user_id == user_id).all()
+    return _get_plans_by_user(db, user_id)
 
 
 def update_plan(
@@ -162,7 +193,7 @@ def update_plan(
     Returns:
         Updated TravelPlan instance or None if not found
     """
-    plan = db.query(TravelPlan).filter(TravelPlan.id == plan_id).first()
+    plan = _get_plan_by_id(db, plan_id)
 
     if not plan:
         return None
@@ -194,7 +225,7 @@ def delete_plan(
     Returns:
         True if deleted, False if not found
     """
-    plan = db.query(TravelPlan).filter(TravelPlan.id == plan_id).first()
+    plan = _get_plan_by_id(db, plan_id)
 
     if not plan:
         return False
