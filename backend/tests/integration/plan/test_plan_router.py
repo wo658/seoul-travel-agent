@@ -46,6 +46,8 @@ class TestPlanRouterCreate:
             params={"user_id": mock_user.id}  # 임시: 나중에 인증으로 대체
         )
 
+        if response.status_code != 201:
+            print(f"Error response: {response.json()}")
         assert response.status_code == 201
         data = response.json()
         assert data["title"] == "API 테스트 플랜"
@@ -77,7 +79,7 @@ class TestPlanRouterCreate:
             params={"user_id": mock_user.id}
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["title"] == "최소 데이터 플랜"
 
@@ -187,7 +189,7 @@ class TestPlanRouterGet:
     def test_get_plan_not_found(self, client, mock_user):
         """Test retrieving non-existent plan returns 404."""
         response = client.get(
-            "/plans/99999",
+            "/api/plans/99999",
             params={"user_id": mock_user.id}
         )
 
@@ -283,7 +285,7 @@ class TestPlanRouterUpdate:
         update_data = {"title": "존재하지 않는 플랜"}
 
         response = client.patch(
-            "/plans/99999",
+            "/api/plans/99999",
             json=update_data,
             params={"user_id": mock_user.id}
         )
@@ -347,7 +349,7 @@ class TestPlanRouterDelete:
     def test_delete_plan_not_found(self, client, mock_user):
         """Test deleting non-existent plan returns 404."""
         response = client.delete(
-            "/plans/99999",
+            "/api/plans/99999",
             params={"user_id": mock_user.id}
         )
 
@@ -365,10 +367,10 @@ class TestPlanRouterDelete:
         test_db_session.refresh(plan2)
 
         # Delete plan1
-        client.delete(f"/plans/{plan1.id}", params={"user_id": mock_user.id})
+        client.delete(f"/api/plans/{plan1.id}", params={"user_id": mock_user.id})
 
         # List should only have plan2
-        response = client.get("/plans", params={"user_id": mock_user.id})
+        response = client.get("/api/plans", params={"user_id": mock_user.id})
         data = response.json()
 
         assert len(data) == 1

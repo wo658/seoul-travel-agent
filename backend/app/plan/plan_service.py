@@ -83,6 +83,9 @@ def create_plan(
 
     Returns:
         Created TravelPlan instance
+
+    Raises:
+        ValueError: If itinerary data is invalid or empty
     """
     # Validate with Pydantic schema
     planner_plan = PlannerPlanCreate(**planner_data)
@@ -91,9 +94,8 @@ def create_plan(
     plan_data = _convert_planner_to_travel_plan_data(planner_plan)
 
     # Extract dates from itinerary
-    start_date, end_date = _extract_dates_from_itinerary(
-        [day.model_dump() for day in planner_plan.itinerary]
-    )
+    itinerary_list = [day.model_dump() for day in planner_plan.itinerary]
+    start_date, end_date = _extract_dates_from_itinerary(itinerary_list)
 
     # Create TravelPlan instance
     travel_plan = TravelPlan(

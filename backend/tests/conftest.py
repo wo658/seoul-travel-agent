@@ -22,39 +22,61 @@ from app.plan.models import TravelPlan  # noqa: F401
 from app.tourist_attraction.models import TouristAttraction  # noqa: F401
 
 
-@pytest.fixture(scope="session")
-def test_db_engine():
-    """Create a test database engine."""
-    # Use in-memory SQLite for tests
+@pytest.fixture(scope="function")
+def test_db_session():
+    """Create a test database session for each test."""
+    # Use in-memory SQLite for tests with poolclass=StaticPool to share connection
+    from sqlalchemy.pool import StaticPool
+
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
+        poolclass=StaticPool,  # Share connection across threads
     )
+    # Create all tables
     Base.metadata.create_all(bind=engine)
-    yield engine
-    engine.dispose()
 
-
-@pytest.fixture(scope="function")
-def test_db_session(test_db_engine):
-    """Create a new database session for each test."""
-    TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
+    # Create session
+    TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = TestSessionLocal()
+
     try:
         yield session
     finally:
-        session.rollback()
-        # Clean up all data after each test
-        for table in reversed(Base.metadata.sorted_tables):
-            session.execute(table.delete())
-        session.commit()
         session.close()
+        engine.dispose()
 
 
 @pytest.fixture(scope="function")
 def client(test_db_session):
     """Create a test client with database override."""
-    app = create_application()
+    from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
+    from app.config import settings
+    from app.ai import router as ai_router
+    from app.auth import router as auth_router
+    from app.plan import router as plan_router
+
+    # Create app without lifespan to avoid table creation conflicts
+    app = FastAPI(
+        title="Seoul Travel Agent API (Test)",
+        description="Test application",
+        version="0.1.0",
+    )
+
+    # CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Register routers
+    app.include_router(ai_router, prefix="/api/ai", tags=["AI"])
+    app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
+    app.include_router(plan_router, prefix="/api/plans", tags=["Travel Plans"])
 
     # Override database dependency
     def override_get_db():
