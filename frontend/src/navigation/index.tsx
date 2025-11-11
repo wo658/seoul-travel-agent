@@ -2,12 +2,14 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
+import { Platform, View } from 'react-native';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { MyPlansScreen } from '@/screens/MyPlansScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 import { TravelPlanInputScreen } from '@/screens/TravelPlanInputScreen';
 import { PlanViewerDemoScreen } from '@/screens/PlanViewerDemoScreen';
 import { Home, Calendar, Settings } from '@/lib/icons';
+import { Text } from '@/components/ui';
 import type { RootStackParamList, BottomTabParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -26,38 +28,80 @@ function BottomTabNavigator() {
           backgroundColor: 'hsl(var(--card))',
           borderTopColor: 'hsl(var(--border))',
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          height: Platform.select({ web: 70, default: 65 }),
+          paddingBottom: Platform.select({ web: 8, default: 8 }),
+          paddingTop: Platform.select({ web: 8, default: 8 }),
         },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
+        tabBarShowLabel: true,
       }}
     >
       <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
         options={{
-          title: t('navigation.home'),
-          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View className="items-center justify-center">
+              <Home
+                color={color}
+                size={24}
+                style={{ transform: [{ scale: focused ? 1.05 : 1 }] }}
+              />
+            </View>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              className={`text-xs ${focused ? 'font-semibold' : 'font-normal'}`}
+              style={{ color: focused ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))' }}
+            >
+              {t('navigation.home')}
+            </Text>
+          ),
         }}
       />
       <Tab.Screen
         name="MyPlans"
         component={MyPlansScreen}
         options={{
-          title: t('navigation.myPlans'),
-          tabBarIcon: ({ color, size }) => <Calendar color={color} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View className="items-center justify-center">
+              <Calendar
+                color={color}
+                size={24}
+                style={{ transform: [{ scale: focused ? 1.05 : 1 }] }}
+              />
+            </View>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              className={`text-xs ${focused ? 'font-semibold' : 'font-normal'}`}
+              style={{ color: focused ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))' }}
+            >
+              {t('navigation.myPlans')}
+            </Text>
+          ),
         }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          title: t('navigation.settings'),
-          tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View className="items-center justify-center">
+              <Settings
+                color={color}
+                size={24}
+                style={{ transform: [{ scale: focused ? 1.05 : 1 }] }}
+              />
+            </View>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              className={`text-xs ${focused ? 'font-semibold' : 'font-normal'}`}
+              style={{ color: focused ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))' }}
+            >
+              {t('navigation.settings')}
+            </Text>
+          ),
         }}
       />
     </Tab.Navigator>
