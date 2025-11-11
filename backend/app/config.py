@@ -1,6 +1,5 @@
 """Application configuration settings."""
 
-from typing import List
 
 from pydantic_settings import BaseSettings
 
@@ -14,7 +13,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"  # development, docker, production
 
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8081"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8081"]
 
     # Database
     # Local development: SQLite (fast, no Docker needed)

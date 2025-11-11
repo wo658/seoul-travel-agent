@@ -1,7 +1,6 @@
 """Plan domain router."""
 
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import ValidationError
@@ -20,7 +19,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/", response_model=List[TravelPlanResponse])
+@router.get("/", response_model=list[TravelPlanResponse])
 async def list_plans(
     user_id: int = Query(..., description="User ID (임시: 나중에 인증으로 대체)"),
     db: Session = Depends(get_db),

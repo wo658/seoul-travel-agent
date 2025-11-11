@@ -1,6 +1,5 @@
 """Test Plan domain models."""
 
-import pytest
 from datetime import datetime
 
 

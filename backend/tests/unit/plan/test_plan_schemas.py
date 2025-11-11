@@ -1,8 +1,6 @@
 """Unit tests for Plan Schemas."""
 
-import pytest
 from datetime import datetime
-from pydantic import ValidationError
 
 
 class TestPlannerPlanSchema:
@@ -148,8 +146,8 @@ class TestPlannerToTravelPlanConversion:
 
     def test_planner_to_travel_plan_conversion(self):
         """Test converting PlannerPlan schema to TravelPlan model data."""
-        from app.plan.plan_schemas import PlannerPlanCreate
         from app.plan import plan_service
+        from app.plan.plan_schemas import PlannerPlanCreate
 
         planner_data = {
             "title": "변환 테스트",

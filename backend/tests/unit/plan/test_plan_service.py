@@ -1,6 +1,5 @@
 """Unit tests for Plan Service layer."""
 
-import pytest
 from datetime import datetime
 
 
@@ -225,8 +224,8 @@ class TestPlanServiceRead:
 
     def test_list_plans_empty_for_new_user(self, test_db_session):
         """Test listing plans returns empty list for user with no plans."""
-        from app.plan import plan_service
         from app.auth.models import User
+        from app.plan import plan_service
 
         # 플랜이 없는 새 사용자
         new_user = User(
@@ -248,8 +247,8 @@ class TestPlanServiceRead:
 
     def test_list_plans_filters_by_user(self, test_db_session, mock_user):
         """Test that list_plans only returns plans for specified user."""
-        from app.plan import plan_service
         from app.auth.models import User
+        from app.plan import plan_service
         from app.plan.models import TravelPlan
 
         # 다른 사용자와 플랜 생성

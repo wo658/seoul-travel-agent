@@ -1,7 +1,6 @@
 """Naver Local Search API client."""
 
 import logging
-from typing import Dict, List, Optional
 
 import httpx
 
@@ -17,8 +16,8 @@ class NaverLocalClient:
 
     def __init__(
         self,
-        client_id: Optional[str] = None,
-        client_secret: Optional[str] = None,
+        client_id: str | None = None,
+        client_secret: str | None = None,
     ):
         """Initialize Naver Local API client.
 
@@ -35,7 +34,7 @@ class NaverLocalClient:
                 "Please set NAVER_CLIENT_ID and NAVER_CLIENT_SECRET in .env file."
             )
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         """Get API request headers."""
         return {
             "X-Naver-Client-Id": self.client_id,
@@ -48,7 +47,7 @@ class NaverLocalClient:
         display: int = 5,
         start: int = 1,
         sort: str = "random",
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Search for local places using Naver Local API.
 
         Args:
@@ -121,7 +120,7 @@ class NaverLocalClient:
         query: str = "맛집",
         radius_km: float = 1.0,
         limit: int = 5,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Search for restaurants near a specific location.
 
         Args:
@@ -155,7 +154,7 @@ class NaverLocalClient:
         query: str = "숙박",
         radius_km: float = 2.0,
         limit: int = 5,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Search for accommodations near a specific location.
 
         Args:

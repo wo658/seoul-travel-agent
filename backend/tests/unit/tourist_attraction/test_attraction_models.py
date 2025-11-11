@@ -1,6 +1,5 @@
 """Test TouristAttraction domain models."""
 
-import pytest
 
 
 class TestTouristAttractionModel:

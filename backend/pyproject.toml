@@ -2,7 +2,6 @@
 name = "seoul-travel-agent"
 version = "0.1.0"
 description = "AI-powered travel planning platform for Seoul"
-readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115.0",
@@ -60,6 +59,8 @@ select = [
 ]
 ignore = [
     "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults (FastAPI pattern)
+    "E402",  # module level import not at top of file (needed for path manipulation)
 ]
 
 [tool.mypy]

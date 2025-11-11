@@ -1,6 +1,5 @@
 """Test Auth domain models."""
 
-import pytest
 
 
 class TestUserModel:

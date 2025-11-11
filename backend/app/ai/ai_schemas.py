@@ -1,7 +1,6 @@
 """AI domain schemas."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -25,8 +24,8 @@ class MessageResponse(MessageBase):
 
     id: int
     conversation_id: int
-    model: Optional[str] = None
-    tokens_used: Optional[int] = None
+    model: str | None = None
+    tokens_used: int | None = None
     created_at: datetime
 
     class Config:
@@ -38,7 +37,7 @@ class ConversationCreate(BaseModel):
     """Conversation creation schema."""
 
     initial_message: str
-    title: Optional[str] = None
+    title: str | None = None
 
 
 class ConversationResponse(BaseModel):
@@ -112,14 +111,14 @@ class ChatRequestLegacy(BaseModel):
     """Legacy chat request."""
 
     messages: list[ChatMessage]
-    context: Optional[dict] = None
+    context: dict | None = None
 
 
 class ChatResponseLegacy(BaseModel):
     """Legacy chat response."""
 
     message: str
-    suggestions: Optional[list[str]] = None
+    suggestions: list[str] | None = None
 
 
 class RecommendationRequest(BaseModel):
@@ -145,7 +144,7 @@ class GenerateTravelPlanRequest(BaseModel):
     user_request: str
     start_date: str  # YYYY-MM-DD
     end_date: str  # YYYY-MM-DD
-    budget: Optional[int] = None  # Amount in KRW (optional)
+    budget: int | None = None  # Amount in KRW (optional)
     interests: list[str] = []  # Optional, defaults to empty list
 
 

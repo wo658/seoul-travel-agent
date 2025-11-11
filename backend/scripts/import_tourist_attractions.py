@@ -4,13 +4,9 @@ import json
 import logging
 from pathlib import Path
 
-from sqlalchemy.orm import Session
-
-from app.database import SessionLocal, engine
-from app.tourist_attraction.models import TouristAttraction
-
 # Import Base to create tables
-from app.database import Base
+from app.database import Base, SessionLocal, engine
+from app.tourist_attraction.models import TouristAttraction
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,7 +22,7 @@ def import_attractions():
     data_path = Path(__file__).parent.parent / "data" / "서울관광지정보.json"
     logger.info(f"Loading data from {data_path}")
 
-    with open(data_path, "r", encoding="utf-8") as f:
+    with open(data_path, encoding="utf-8") as f:
         data = json.load(f)
 
     records = data["records"]
@@ -101,7 +97,7 @@ def import_attractions():
 
         # Commit all changes
         db.commit()
-        logger.info(f"✅ Import completed!")
+        logger.info("✅ Import completed!")
         logger.info(f"   Imported: {imported_count}")
         logger.info(f"   Skipped: {skipped_count}")
 

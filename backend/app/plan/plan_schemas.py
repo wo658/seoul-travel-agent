@@ -1,10 +1,9 @@
 """Plan domain schemas."""
 
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
-
 
 # ============================================================================
 # Planner Agent Response Schemas (Frontend compatibility)
@@ -19,7 +18,7 @@ class PlannerActivity(BaseModel):
     venue_type: Literal["attraction", "restaurant", "accommodation", "cafe", "shopping"]
     duration_minutes: int = Field(..., gt=0, le=1440, description="Duration in minutes (max 24 hours)")
     estimated_cost: int = Field(..., ge=0, description="Estimated cost in KRW")
-    notes: Optional[str] = Field(None, max_length=1000, description="Additional notes")
+    notes: str | None = Field(None, max_length=1000, description="Additional notes")
 
 
 class PlannerDayItinerary(BaseModel):
@@ -28,7 +27,7 @@ class PlannerDayItinerary(BaseModel):
     day: int = Field(..., gt=0, description="Day number (starts from 1)")
     date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="Date in YYYY-MM-DD format")
     theme: str = Field(..., min_length=1, max_length=200, description="Theme for the day")
-    activities: List[PlannerActivity] = Field(default_factory=list, description="List of activities")
+    activities: list[PlannerActivity] = Field(default_factory=list, description="List of activities")
     daily_cost: int = Field(..., ge=0, description="Total cost for the day in KRW")
 
 
@@ -46,13 +45,13 @@ class PlannerPlanCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Plan title")
     total_days: int = Field(..., gt=0, le=30, description="Total number of days (max 30)")
     total_cost: int = Field(..., ge=0, description="Total estimated cost in KRW")
-    itinerary: List[PlannerDayItinerary] = Field(..., min_length=1, description="Daily itinerary (at least 1 day)")
-    accommodation: Optional[PlannerAccommodation] = Field(None, description="Accommodation information")
-    summary: Optional[str] = Field(None, max_length=1000, description="Plan summary")
+    itinerary: list[PlannerDayItinerary] = Field(..., min_length=1, description="Daily itinerary (at least 1 day)")
+    accommodation: PlannerAccommodation | None = Field(None, description="Accommodation information")
+    summary: str | None = Field(None, max_length=1000, description="Plan summary")
 
     @field_validator("itinerary")
     @classmethod
-    def validate_itinerary_days(cls, v: List[PlannerDayItinerary]) -> List[PlannerDayItinerary]:
+    def validate_itinerary_days(cls, v: list[PlannerDayItinerary]) -> list[PlannerDayItinerary]:
         """Validate that itinerary days are sequential."""
         if not v:
             raise ValueError("Itinerary must have at least one day")
@@ -76,20 +75,20 @@ class TravelPlanCreate(BaseModel):
     """Travel plan creation schema."""
 
     title: str = Field(..., min_length=1, max_length=200, description="Plan title")
-    description: Optional[str] = Field(None, max_length=2000, description="Plan description")
-    start_date: Optional[datetime] = Field(None, description="Start date of the trip")
-    end_date: Optional[datetime] = Field(None, description="End date of the trip")
+    description: str | None = Field(None, max_length=2000, description="Plan description")
+    start_date: datetime | None = Field(None, description="Start date of the trip")
+    end_date: datetime | None = Field(None, description="End date of the trip")
 
 
 class TravelPlanUpdate(BaseModel):
     """Travel plan update schema."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=200, description="Plan title")
-    description: Optional[str] = Field(None, max_length=2000, description="Plan description")
-    itinerary: Optional[dict] = Field(None, description="Updated itinerary")
-    recommendations: Optional[dict] = Field(None, description="Updated recommendations")
-    start_date: Optional[datetime] = Field(None, description="Start date of the trip")
-    end_date: Optional[datetime] = Field(None, description="End date of the trip")
+    title: str | None = Field(None, min_length=1, max_length=200, description="Plan title")
+    description: str | None = Field(None, max_length=2000, description="Plan description")
+    itinerary: dict | None = Field(None, description="Updated itinerary")
+    recommendations: dict | None = Field(None, description="Updated recommendations")
+    start_date: datetime | None = Field(None, description="Start date of the trip")
+    end_date: datetime | None = Field(None, description="End date of the trip")
 
 
 class TravelPlanResponse(BaseModel):
@@ -98,11 +97,11 @@ class TravelPlanResponse(BaseModel):
     id: int
     user_id: int
     title: str
-    description: Optional[str] = None
-    itinerary: Optional[dict] = None
-    recommendations: Optional[dict] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    description: str | None = None
+    itinerary: dict | None = None
+    recommendations: dict | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

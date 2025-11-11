@@ -91,10 +91,11 @@ async def fetch_venues(state: PlanningState) -> dict[str, Any]:
     logger.debug(f"📥 Input state: interests={state.get('interests')}, budget={state.get('budget')}, dates={state.get('dates')}")
 
     from datetime import datetime
+
     from app.database import SessionLocal
+    from app.naver.client import NaverLocalClient
     from app.tourist_attraction.models import TouristAttraction
     from app.tourist_attraction.vector_store import TouristAttractionVectorStore
-    from app.naver.client import NaverLocalClient
 
     db = SessionLocal()
 
@@ -353,7 +354,7 @@ def should_retry(state: PlanningState) -> str:
     attempts = state.get("attempts", 0)
     errors = state.get("errors", [])
 
-    logger.info(f"🔵 [should_retry] Routing decision started")
+    logger.info("🔵 [should_retry] Routing decision started")
     logger.debug(f"📥 State: attempts={attempts}/{max_attempts}, errors={len(errors)}")
 
     # If there are errors and haven't exceeded max attempts

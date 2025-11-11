@@ -1,10 +1,9 @@
 """Tourist attraction database models."""
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text
-from sqlalchemy.dialects.sqlite import JSON
 
 from app.database import Base
 
@@ -94,7 +93,7 @@ class TouristAttraction(Base):
 
         return " | ".join(parts)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert attraction to dictionary representation."""
         return {
             "id": self.id,

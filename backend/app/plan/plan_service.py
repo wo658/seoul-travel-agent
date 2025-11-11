@@ -1,20 +1,18 @@
 """Plan domain service layer."""
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
 from app.plan.models import TravelPlan
 from app.plan.plan_schemas import PlannerPlanCreate
 
-
 # ============================================================================
 # Helper Functions
 # ============================================================================
 
 
-def _extract_dates_from_itinerary(itinerary_data: List[Dict]) -> tuple[datetime, datetime]:
+def _extract_dates_from_itinerary(itinerary_data: list[dict]) -> tuple[datetime, datetime]:
     """Extract start and end dates from itinerary days.
 
     Args:
@@ -36,7 +34,7 @@ def _extract_dates_from_itinerary(itinerary_data: List[Dict]) -> tuple[datetime,
     return start_date, end_date
 
 
-def _convert_planner_to_travel_plan_data(planner_plan: PlannerPlanCreate) -> Dict:
+def _convert_planner_to_travel_plan_data(planner_plan: PlannerPlanCreate) -> dict:
     """Convert PlannerPlan schema to TravelPlan model data.
 
     Args:
@@ -69,7 +67,7 @@ def _convert_planner_to_travel_plan_data(planner_plan: PlannerPlanCreate) -> Dic
 # ============================================================================
 
 
-def _get_plan_by_id(db: Session, plan_id: int) -> Optional[TravelPlan]:
+def _get_plan_by_id(db: Session, plan_id: int) -> TravelPlan | None:
     """Get plan by ID from database.
 
     Args:
@@ -82,7 +80,7 @@ def _get_plan_by_id(db: Session, plan_id: int) -> Optional[TravelPlan]:
     return db.query(TravelPlan).filter(TravelPlan.id == plan_id).first()
 
 
-def _get_plans_by_user(db: Session, user_id: int) -> List[TravelPlan]:
+def _get_plans_by_user(db: Session, user_id: int) -> list[TravelPlan]:
     """Get all plans for a user from database.
 
     Args:
@@ -103,7 +101,7 @@ def _get_plans_by_user(db: Session, user_id: int) -> List[TravelPlan]:
 def create_plan(
     db: Session,
     user_id: int,
-    planner_data: Dict
+    planner_data: dict
 ) -> TravelPlan:
     """Create a new travel plan from Planner Agent response.
 
@@ -149,7 +147,7 @@ def create_plan(
 def get_plan(
     db: Session,
     plan_id: int
-) -> Optional[TravelPlan]:
+) -> TravelPlan | None:
     """Get a travel plan by ID.
 
     Args:
@@ -165,7 +163,7 @@ def get_plan(
 def list_plans(
     db: Session,
     user_id: int
-) -> List[TravelPlan]:
+) -> list[TravelPlan]:
     """List all travel plans for a user.
 
     Args:
@@ -181,8 +179,8 @@ def list_plans(
 def update_plan(
     db: Session,
     plan_id: int,
-    update_data: Dict
-) -> Optional[TravelPlan]:
+    update_data: dict
+) -> TravelPlan | None:
     """Update a travel plan.
 
     Args:

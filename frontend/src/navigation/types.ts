@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabScreenProps as RNBottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import { TravelPlan } from '@/types';
 
@@ -25,7 +25,7 @@ export type RootStackScreenProps<T extends keyof RootStackParamList> =
 
 export type BottomTabScreenProps<T extends keyof BottomTabParamList> =
   CompositeScreenProps<
-    BottomTabScreenProps<BottomTabParamList, T>,
+    RNBottomTabScreenProps<BottomTabParamList, T>,
     NativeStackScreenProps<RootStackParamList>
   >;
 

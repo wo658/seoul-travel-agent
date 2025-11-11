@@ -30,7 +30,7 @@ export function PlanViewerDemoScreen() {
     Alert.alert('성공', '계획이 저장되었습니다!', [
       {
         text: '확인',
-        onPress: () => navigation.navigate('Home'),
+        onPress: () => navigation.navigate('MainTabs'),
       },
     ]);
   };

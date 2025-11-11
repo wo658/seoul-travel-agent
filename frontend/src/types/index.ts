@@ -31,7 +31,7 @@ export type TravelPlanApiResponse = components['schemas']['app__ai__ai_schemas__
 export type GeneratePlanApiResponse = TravelPlanApiResponse; // Backward compatibility alias
 
 // ----- Plan CRUD Operations -----
-export type TravelPlanCreate = components['schemas']['TravelPlanCreate'];
+// export type TravelPlanCreate = components['schemas']['TravelPlanCreate']; // Not available in OpenAPI schema
 export type TravelPlanUpdate = components['schemas']['TravelPlanUpdate'];
 export type PlanResponse = components['schemas']['app__plan__plan_schemas__TravelPlanResponse'];
 

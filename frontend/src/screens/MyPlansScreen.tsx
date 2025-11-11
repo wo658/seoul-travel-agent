@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import {
   Card,
@@ -13,10 +12,10 @@ import {
   Text,
 } from '@/components/ui';
 import { Calendar, MapPin, Clock, Plus, AlertCircle } from '@/lib/icons';
-import type { RootStackParamList } from '@/navigation';
+import type { BottomTabScreenProps } from '@/navigation';
 import { plansApi, type TravelPlanResponse } from '@/lib/api';
 
-type MyPlansScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MyPlans'>;
+type MyPlansScreenNavigationProp = BottomTabScreenProps<'MyPlans'>['navigation'];
 
 export function MyPlansScreen() {
   const navigation = useNavigation<MyPlansScreenNavigationProp>();

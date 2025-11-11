@@ -2,7 +2,6 @@ import React from 'react';
 import { View, ScrollView, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -15,9 +14,9 @@ import {
   Text,
 } from '@/components/ui';
 import { MapPin, Calendar, Sparkles, Clock, TrendingUp, ArrowRight } from '@/lib/icons/';
-import type { RootStackParamList } from '@/navigation';
+import type { BottomTabScreenProps } from '@/navigation';
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'HomeTab'>;
+type HomeScreenNavigationProp = BottomTabScreenProps<'HomeTab'>['navigation'];
 
 export function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();

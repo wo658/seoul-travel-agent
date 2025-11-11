@@ -1,6 +1,5 @@
 """Pytest configuration and fixtures for backend tests."""
 
-import os
 import sys
 from pathlib import Path
 
@@ -13,11 +12,9 @@ from sqlalchemy.orm import sessionmaker
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from app.database import Base, get_db
-from app.main import create_application
-
 # Import all models to ensure they are registered with Base metadata
 from app.auth.models import User  # noqa: F401
+from app.database import Base, get_db
 from app.plan.models import TravelPlan  # noqa: F401
 from app.tourist_attraction.models import TouristAttraction  # noqa: F401
 
@@ -52,9 +49,10 @@ def client(test_db_session):
     """Create a test client with database override."""
     from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
-    from app.config import settings
+
     from app.ai import router as ai_router
     from app.auth import router as auth_router
+    from app.config import settings
     from app.plan import router as plan_router
 
     # Create app without lifespan to avoid table creation conflicts
@@ -97,7 +95,6 @@ def client(test_db_session):
 @pytest.fixture
 def mock_user(test_db_session):
     """Create a mock user for testing."""
-    from app.auth.models import User
 
     user = User(
         email="test@example.com",
@@ -113,7 +110,6 @@ def mock_user(test_db_session):
 @pytest.fixture
 def mock_travel_plan(test_db_session, mock_user):
     """Create a mock travel plan for testing."""
-    from app.plan.models import TravelPlan
 
     plan = TravelPlan(
         user_id=mock_user.id,

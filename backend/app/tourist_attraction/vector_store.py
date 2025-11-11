@@ -1,7 +1,6 @@
 """ChromaDB vector store for tourist attractions."""
 
 import logging
-from typing import List, Tuple
 
 import chromadb
 from chromadb.config import Settings
@@ -50,7 +49,7 @@ class TouristAttractionVectorStore:
             )
             logger.info(f"Created new collection: {self.collection_name}")
 
-    def add_attractions(self, attractions: List[dict]) -> None:
+    def add_attractions(self, attractions: list[dict]) -> None:
         """Add tourist attractions to vector store.
 
         Args:
@@ -103,7 +102,7 @@ class TouristAttractionVectorStore:
         query: str,
         n_results: int = 5,
         filter_dict: dict = None,
-    ) -> List[Tuple[dict, float]]:
+    ) -> list[tuple[dict, float]]:
         """Search for attractions using semantic similarity.
 
         Args:
