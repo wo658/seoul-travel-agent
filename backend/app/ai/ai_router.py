@@ -3,7 +3,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -25,9 +25,9 @@ router = APIRouter()
 @router.post("/plans/generate", response_model=TravelPlanResponse)
 async def generate_travel_plan(
     request: GenerateTravelPlanRequest,
-    user_id: int,  # TODO: Replace with authenticated user from dependency
+    user_id: int = Query(..., description="User ID (임시: 나중에 인증으로 대체)"),
+    save_to_db: bool = Query(True, description="Whether to save the generated plan to database"),
     db: Session = Depends(get_db),
-    save_to_db: bool = True,  # Option to save plan to database
 ):
     """Generate initial travel plan using Planner Agent.
 
@@ -38,14 +38,35 @@ async def generate_travel_plan(
     4. Validate budget and time constraints
     5. Optionally save the plan to database (default: True)
 
+    Frontend usage:
+    ```javascript
+    // Generate plan and save to DB (default)
+    const response = await fetch('/api/ai/plans/generate?user_id=1', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_request: "3일 서울 여행",
+        start_date: "2025-07-01",
+        end_date: "2025-07-03",
+        budget: 500000,
+        interests: ["palace", "food"]
+      })
+    });
+
+    // Generate plan without saving
+    const response = await fetch('/api/ai/plans/generate?user_id=1&save_to_db=false', {
+      method: 'POST',
+      body: JSON.stringify({ ... })
+    });
+    ```
+
     Args:
         request: Travel plan generation request
         user_id: User ID (temporary: will be replaced with authentication)
+        save_to_db: Whether to save the generated plan to database (default: True)
         db: Database session
-        save_to_db: Whether to save the generated plan to database
 
     Returns:
-        TravelPlanResponse with generated plan and optional plan_id
+        TravelPlanResponse with generated plan and optional plan_id if saved
     """
     logger.info("🚀 [API] POST /plans/generate - Request received")
     logger.debug(f"📥 Request: dates={request.start_date} to {request.end_date}, budget={request.budget}, interests={request.interests}, save_to_db={save_to_db}")
