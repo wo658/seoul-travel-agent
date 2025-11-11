@@ -22,6 +22,11 @@ yarn-error.*
 /android
 .playwright-mcp/
 
+# OpenAPI (auto-generated)
+openapi.json
+frontend/openapi.json
+backend/openapi.json
+
 # Backend (Python)
 __pycache__/
 *.py[cod]
