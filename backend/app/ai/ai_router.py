@@ -24,7 +24,6 @@ router = APIRouter()
 @router.post("/plans/generate", response_model=TravelPlanResponse)
 async def generate_travel_plan(
     request: GenerateTravelPlanRequest,
-    db: Session = Depends(get_db),
 ):
     """Generate initial travel plan using Planner Agent.
 
@@ -34,8 +33,7 @@ async def generate_travel_plan(
     3. Generate comprehensive day-by-day itinerary
     4. Validate budget and time constraints
     """
-    logger.info("🚀 [API] POST /plans/generate - Request received")
-    logger.debug(f"📥 Request: dates={request.start_date} to {request.end_date}, budget={request.budget}, interests={request.interests}")
+    logger.info("POST /plans/generate - Request received")
 
     try:
         plan = await ai_service.generate_initial_plan(
@@ -45,21 +43,20 @@ async def generate_travel_plan(
             interests=request.interests,
         )
 
-        logger.info("✅ [API] Plan generation completed successfully")
+        logger.info("Plan generation completed successfully")
         return TravelPlanResponse(plan=plan)
 
     except ValueError as e:
-        logger.error(f"❌ [API] Validation error: {e}")
+        logger.error(f"Validation error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"❌ [API] Plan generation failed: {e}", exc_info=True)
+        logger.error(f"Plan generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Plan generation failed: {str(e)}")
 
 
 @router.post("/plans/generate/stream")
 async def generate_travel_plan_stream(
     request: GenerateTravelPlanRequest,
-    db: Session = Depends(get_db),
 ):
     """Generate travel plan with SSE streaming for real-time progress updates.
 
@@ -70,8 +67,7 @@ async def generate_travel_plan_stream(
     - error: If any error occurs
     - complete: Final plan when generation is complete
     """
-    logger.info("🚀 [API] POST /plans/generate/stream - SSE request received")
-    logger.debug(f"📥 Request: dates={request.start_date} to {request.end_date}, budget={request.budget}")
+    logger.info("POST /plans/generate/stream - SSE request received")
 
     async def event_generator():
         """Generate SSE events for plan generation progress."""
@@ -88,7 +84,7 @@ async def generate_travel_plan_stream(
                 yield f"data: {event_data}\n\n"
 
         except Exception as e:
-            logger.error(f"❌ [API] Streaming error: {e}", exc_info=True)
+            logger.error(f"Streaming error: {e}", exc_info=True)
             error_event = {
                 "type": "error",
                 "message": str(e),
@@ -109,7 +105,6 @@ async def generate_travel_plan_stream(
 async def review_travel_plan(
     request: ReviewTravelPlanRequest,
     original_plan: dict,
-    db: Session = Depends(get_db),
 ):
     """Review and modify travel plan using Reviewer Agent.
 

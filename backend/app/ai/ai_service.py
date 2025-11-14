@@ -13,6 +13,27 @@ class AIService:
     - Reviewer Agent: Reviews and modifies plans based on user feedback
     """
 
+    def _create_initial_planning_state(
+        self,
+        user_request: str,
+        dates: tuple[str, str],
+        budget: int,
+        interests: list[str],
+    ) -> dict:
+        """Create initial planning state."""
+        return {
+            "user_request": user_request,
+            "dates": dates,
+            "budget": budget,
+            "interests": interests,
+            "attractions": [],
+            "restaurants": [],
+            "accommodations": [],
+            "travel_plan": None,
+            "attempts": 0,
+            "errors": [],
+        }
+
     async def generate_initial_plan(
         self,
         user_request: str,
@@ -34,39 +55,26 @@ class AIService:
         Raises:
             ValueError: If plan generation fails after max attempts
         """
-        logger.info("🎯 [AIService] Starting plan generation")
-        logger.debug(f"📥 Input: dates={dates}, budget={budget}, interests={interests}")
+        logger.info("Starting plan generation")
 
-        from app.ai.agents.planner import PlanningState, planner_graph
+        from app.ai.agents.planner import planner_graph
 
-        initial_state: PlanningState = {
-            "user_request": user_request,
-            "dates": dates,
-            "budget": budget,
-            "interests": interests,
-            "attractions": [],
-            "restaurants": [],
-            "accommodations": [],
-            "travel_plan": None,
-            "attempts": 0,
-            "errors": [],
-        }
+        initial_state = self._create_initial_planning_state(
+            user_request, dates, budget, interests
+        )
 
-        logger.info("🔄 [AIService] Invoking planner graph...")
         final_state = await planner_graph.ainvoke(initial_state)
-
-        logger.debug(f"📤 Final state: attempts={final_state.get('attempts')}, errors={len(final_state.get('errors', []))}, has_plan={final_state.get('travel_plan') is not None}")
 
         if final_state.get("errors"):
             error_msg = f"Plan generation failed: {'; '.join(final_state['errors'])}"
-            logger.error(f"❌ [AIService] {error_msg}")
+            logger.error(error_msg)
             raise ValueError(error_msg)
 
         if not final_state.get("travel_plan"):
-            logger.error("❌ [AIService] No plan generated")
+            logger.error("No plan generated")
             raise ValueError("No plan generated")
 
-        logger.info("✅ [AIService] Plan generation successful")
+        logger.info("Plan generation successful")
         return final_state["travel_plan"]
 
     async def generate_plan_stream(
@@ -84,22 +92,13 @@ class AIService:
         - {"type": "complete", "plan": {...}}
         - {"type": "error", "message": "..."}
         """
-        logger.info("🎯 [AIService] Starting streaming plan generation")
+        logger.info("Starting streaming plan generation")
 
-        from app.ai.agents.planner import PlanningState, planner_graph
+        from app.ai.agents.planner import planner_graph
 
-        initial_state: PlanningState = {
-            "user_request": user_request,
-            "dates": dates,
-            "budget": budget,
-            "interests": interests,
-            "attractions": [],
-            "restaurants": [],
-            "accommodations": [],
-            "travel_plan": None,
-            "attempts": 0,
-            "errors": [],
-        }
+        initial_state = self._create_initial_planning_state(
+            user_request, dates, budget, interests
+        )
 
         try:
             # Use astream to get state updates during graph execution
@@ -108,10 +107,7 @@ class AIService:
                 for node_name, state_update in event.items():
                     # Skip if state_update is None
                     if state_update is None:
-                        logger.debug(f"📡 [Stream] Node: {node_name}, Update: None")
                         continue
-
-                    logger.debug(f"📡 [Stream] Node: {node_name}, Update: {list(state_update.keys())}")
 
                     # Emit node completion event with relevant data
                     event_data = {
@@ -169,10 +165,10 @@ class AIService:
                 "plan": final_state["travel_plan"],
             }
 
-            logger.info("✅ [AIService] Streaming plan generation complete")
+            logger.info("Streaming plan generation complete")
 
         except Exception as e:
-            logger.error(f"❌ [AIService] Streaming error: {e}", exc_info=True)
+            logger.error(f"Streaming error: {e}", exc_info=True)
             yield {
                 "type": "error",
                 "message": str(e),
