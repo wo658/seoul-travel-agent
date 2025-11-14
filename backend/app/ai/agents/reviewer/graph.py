@@ -3,6 +3,7 @@
 from langgraph.graph import END, START, StateGraph
 
 from app.ai.agents.reviewer.nodes import (
+    fetch_context,
     modify_plan,
     parse_feedback,
     route_feedback,
@@ -19,13 +20,17 @@ def create_reviewer_graph() -> StateGraph:
                            ↓
                        [reject] → END (Planner needs to be called again)
                            ↓
-                       [modify] → modify_plan → validate → END
+                       [modify] → fetch_context → modify_plan → validate → END
+
+    The fetch_context node retrieves relevant data (attractions, restaurants, accommodations)
+    based on the modification type, enabling data-driven plan modifications.
     """
     # Initialize graph with ReviewState
     graph = StateGraph(ReviewState)
 
     # Add nodes
     graph.add_node("parse_feedback", parse_feedback)
+    graph.add_node("fetch_context", fetch_context)
     graph.add_node("modify_plan", modify_plan)
     graph.add_node("validate", validate_modification)
 
@@ -39,11 +44,12 @@ def create_reviewer_graph() -> StateGraph:
         {
             "approve": END,
             "reject": END,
-            "modify": "modify_plan",
+            "modify": "fetch_context",
         },
     )
 
     # Edges for modification flow
+    graph.add_edge("fetch_context", "modify_plan")
     graph.add_edge("modify_plan", "validate")
     graph.add_edge("validate", END)
 

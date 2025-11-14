@@ -13,6 +13,12 @@ class ReviewState(TypedDict):
     # Parsed results
     feedback_type: str | None  # "modify" | "approve" | "reject"
     target_section: str | None  # "day_1", "budget", "accommodation", etc.
+    modification_type: str | None  # "restaurant", "attraction", "accommodation", "budget", "time", "general"
+
+    # Context data (fetched based on modification needs)
+    attractions: list[dict]  # New attraction options from vector search
+    restaurants: list[dict]  # New restaurant options from Naver API
+    accommodations: list[dict]  # New accommodation options from Naver API
 
     # Output
     modified_plan: dict | None
