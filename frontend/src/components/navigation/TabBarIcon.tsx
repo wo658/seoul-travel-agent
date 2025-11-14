@@ -1,43 +1,80 @@
-import React from 'react';
-import { View } from 'react-native';
-import { Text } from '@/components/ui';
+import React, { useEffect, useRef } from 'react';
+import { View, Animated, Platform } from 'react-native';
 
 interface TabBarIconProps {
   icon: React.ReactNode;
-  label: string;
   focused: boolean;
 }
 
 /**
- * YouTube-style tab bar icon with label
- * Uses Tailwind CSS for consistent theming
+ * Minimalist icon-only tab bar
+ * - Clean icon-focused design
+ * - Smooth scale and opacity animations
+ * - Subtle active indicator
+ * - Cross-platform optimized (web + native)
  */
-export function TabBarIcon({ icon, label, focused }: TabBarIconProps) {
-  return (
-    <View className="items-center justify-center gap-1 py-1">
-      {/* Icon container */}
-      <View
-        className={`
-          items-center justify-center
-          ${focused ? 'scale-110' : 'scale-100'}
-        `}
-        style={{ transform: [{ scale: focused ? 1.1 : 1 }] }}
-      >
-        {icon}
-      </View>
+export function TabBarIcon({ icon, focused }: TabBarIconProps) {
+  const scaleAnim = useRef(new Animated.Value(focused ? 1.15 : 1)).current;
+  const opacityAnim = useRef(new Animated.Value(focused ? 1 : 0.5)).current;
 
-      {/* Label with focused state */}
-      <Text
-        className={`
-          text-xs
-          ${focused ? 'font-semibold' : 'font-normal'}
-        `}
+  // Use native driver only on native platforms (not web)
+  const useNativeDriver = Platform.OS !== 'web';
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: focused ? 1.15 : 1,
+        friction: 7,
+        tension: 120,
+        useNativeDriver,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: focused ? 1 : 0.5,
+        duration: 200,
+        useNativeDriver,
+      }),
+    ]).start();
+  }, [focused, scaleAnim, opacityAnim, useNativeDriver]);
+
+  return (
+    <View
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 60,
+        height: 48,
+      }}
+    >
+      {/* Icon with smooth animation */}
+      <Animated.View
         style={{
-          color: focused ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
+          transform: [{ scale: scaleAnim }],
+          opacity: opacityAnim,
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        {label}
-      </Text>
+        {icon}
+      </Animated.View>
+
+      {/* Subtle active indicator bar */}
+      {focused && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 4,
+            height: 2,
+            width: 32,
+            borderRadius: 2,
+            backgroundColor: 'hsl(var(--primary))',
+            shadowColor: 'hsl(var(--primary))',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.4,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        />
+      )}
     </View>
   );
 }

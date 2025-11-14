@@ -12,13 +12,12 @@ import {
   Text,
 } from '@/components/ui';
 import { Calendar, MapPin, Clock, Plus, AlertCircle } from '@/lib/icons';
-import type { BottomTabScreenProps } from '@/navigation';
+import { AppHeader } from '@/components/navigation';
+import type { RootStackScreenProps } from '@/navigation';
 import { plansApi, type TravelPlanResponse } from '@/lib/api';
 
-type MyPlansScreenNavigationProp = BottomTabScreenProps<'MyPlans'>['navigation'];
-
 export function MyPlansScreen() {
-  const navigation = useNavigation<MyPlansScreenNavigationProp>();
+  const navigation = useNavigation<RootStackScreenProps<'MyPlans'>['navigation']>();
   const { t } = useTranslation();
 
   const [plans, setPlans] = useState<TravelPlanResponse[]>([]);
@@ -44,7 +43,7 @@ export function MyPlansScreen() {
   };
 
   const handleCreatePlan = () => {
-    navigation.navigate('PlanInput' as any);
+    navigation.navigate('PlanInput');
   };
 
   const formatDate = (dateString: string) => {
@@ -63,18 +62,10 @@ export function MyPlansScreen() {
   return (
     <View className="flex-1 bg-background">
       <StatusBar style="auto" />
+      <AppHeader title={t('myPlans.title')} />
 
       <ScrollView className="flex-1">
-        <View className="p-6 pt-12 gap-6">
-          {/* Header */}
-          <View className="gap-2">
-            <Text className="text-4xl font-bold text-foreground">
-              {t('myPlans.title')}
-            </Text>
-            <Text className="text-base text-muted-foreground">
-              {t('myPlans.description')}
-            </Text>
-          </View>
+        <View className="p-6 gap-6">
 
           {/* Create New Plan Button */}
           <Pressable onPress={handleCreatePlan} className="active:opacity-70">

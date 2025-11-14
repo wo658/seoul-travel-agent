@@ -13,6 +13,7 @@ import {
   Text,
   Separator,
 } from '@/components/ui';
+import { AppHeader } from '@/components/navigation';
 import {
   User,
   Bell,
@@ -146,18 +147,10 @@ export function SettingsScreen() {
   return (
     <View className="flex-1 bg-background">
       <StatusBar style="auto" />
+      <AppHeader title={t('settings.title')} showBack={false} />
 
       <ScrollView className="flex-1">
-        <View className="p-6 pt-12 gap-6">
-          {/* Header */}
-          <View className="gap-2">
-            <Text className="text-4xl font-bold text-foreground">
-              {t('settings.title')}
-            </Text>
-            <Text className="text-base text-muted-foreground">
-              {t('settings.description')}
-            </Text>
-          </View>
+        <View className="p-6 gap-6">
 
           {/* Account Section */}
           <Card>
