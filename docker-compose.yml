@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (production-like environment)
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: seoul_travel
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/src:/app/src
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env.docker
+    command: uvicorn seoul_travel.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (React Native Web)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+      - "8081:8081"  # Expo DevTools
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.expo
+    environment:
+      - EXPO_PUBLIC_API_URL=http://localhost:8000  # 브라우저에서 호출하므로 localhost
+      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+    depends_on:
+      - backend
+    command: npm run web
+
+volumes:
+  postgres_data:
