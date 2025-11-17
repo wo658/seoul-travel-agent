@@ -3,11 +3,16 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import Command
 
+from app.ai.agents.planner.models import (
+    TravelInfoExtraction,
+    TravelPlan,
+    ValidationResult,
+)
 from app.ai.agents.planner.prompts import (
     COLLECT_INFO_PROMPT,
     GENERATE_PLAN_PROMPT,
@@ -60,6 +65,7 @@ async def collect_info(state: PlanningState) -> Command[Literal["fetch_venues"]]
         logger.info(f"🔍 [collect_info] Parsing missing fields from user_request: {missing_fields}")
 
         llm = get_llm(temperature=0)
+        structured_llm = llm.with_structured_output(TravelInfoExtraction)
         prompt = COLLECT_INFO_PROMPT.format(user_request=state["user_request"])
 
         messages = [
@@ -68,19 +74,18 @@ async def collect_info(state: PlanningState) -> Command[Literal["fetch_venues"]]
         ]
 
         try:
-            response = await llm.ainvoke(messages)
-            parsed_data = json.loads(response.content)
-            logger.debug(f"🤖 LLM parsed: {parsed_data}")
+            parsed_data: TravelInfoExtraction = await structured_llm.ainvoke(messages)
+            logger.debug(f"🤖 LLM parsed: {parsed_data.model_dump()}")
 
             # Fill in missing fields only
-            if "dates" in missing_fields and parsed_data.get("dates"):
-                result["dates"] = tuple(parsed_data["dates"])
-            if "budget" in missing_fields and parsed_data.get("budget"):
-                result["budget"] = parsed_data["budget"]
-            if "interests" in missing_fields and parsed_data.get("interests"):
-                result["interests"] = parsed_data["interests"]
+            if "dates" in missing_fields and parsed_data.dates:
+                result["dates"] = parsed_data.dates
+            if "budget" in missing_fields and parsed_data.budget:
+                result["budget"] = parsed_data.budget
+            if "interests" in missing_fields and parsed_data.interests:
+                result["interests"] = parsed_data.interests
 
-        except (json.JSONDecodeError, Exception) as e:
+        except Exception as e:
             logger.error(f"❌ [collect_info] LLM parsing failed: {e}")
             # On error, still proceed to fetch_venues but with error state
             return Command(
@@ -262,6 +267,7 @@ async def generate_plan(state: PlanningState) -> Command[Literal["__end__"]]:
     logger.debug(f"📥 Venue counts: attractions={len(state.get('attractions', []))}, restaurants={len(state.get('restaurants', []))}, accommodations={len(state.get('accommodations', []))}")
 
     llm = get_llm(temperature=0.5)
+    structured_llm = llm.with_structured_output(TravelPlan)
 
     # Safely get state values with defaults to prevent format errors
     # Use 'or' to handle both missing keys and None values
@@ -303,24 +309,20 @@ async def generate_plan(state: PlanningState) -> Command[Literal["__end__"]]:
         HumanMessage(content=prompt),
     ]
 
-    response = await llm.ainvoke(messages)
-    logger.debug(f"🤖 LLM response length: {len(response.content)} chars")
-
     try:
-        travel_plan = json.loads(response.content)
-        logger.info(f"✅ [generate_plan] Successfully generated plan with {len(travel_plan.get('itinerary', []))} days")
+        travel_plan: TravelPlan = await structured_llm.ainvoke(messages)
+        logger.info(f"✅ [generate_plan] Successfully generated plan with {len(travel_plan.itinerary)} days")
 
-        # Route to END with completed plan
+        # Route to END with completed plan (convert to dict for state)
         return Command(
             update={
-                "travel_plan": travel_plan,
+                "travel_plan": travel_plan.model_dump(),
                 "attempts": attempt,
             },
             goto=END
         )
-    except json.JSONDecodeError as e:
-        logger.error(f"❌ [generate_plan] JSON decode failed: {e}")
-        logger.debug(f"Raw response: {response.content[:500]}")
+    except Exception as e:
+        logger.error(f"❌ [generate_plan] Failed to generate plan: {e}")
         # Route to END even on error
         return Command(
             update={
@@ -351,6 +353,7 @@ async def validate_plan(state: PlanningState) -> Command[Literal["generate_plan"
     logger.debug(f"📥 Validating plan with {len(state['travel_plan'].get('itinerary', []))} days")
 
     llm = get_llm(temperature=0)
+    structured_llm = llm.with_structured_output(ValidationResult)
 
     # Safely get budget with default to prevent format errors
     budget = state.get("budget", 0)
@@ -365,15 +368,12 @@ async def validate_plan(state: PlanningState) -> Command[Literal["generate_plan"
         HumanMessage(content=prompt),
     ]
 
-    response = await llm.ainvoke(messages)
-    logger.debug(f"🤖 LLM response length: {len(response.content)} chars")
-
     try:
-        validation_result = json.loads(response.content)
+        validation_result: ValidationResult = await structured_llm.ainvoke(messages)
+        logger.debug(f"🤖 Validation result: {validation_result.model_dump()}")
 
-        if not validation_result.get("is_valid", False):
-            errors = validation_result.get("errors", [])
-            logger.warning(f"⚠️ [validate_plan] Plan validation failed: {errors}")
+        if not validation_result.is_valid:
+            logger.warning(f"⚠️ [validate_plan] Plan validation failed: {validation_result.errors}")
 
             max_attempts = 3
             attempts = state.get("attempts", 0)
@@ -383,7 +383,7 @@ async def validate_plan(state: PlanningState) -> Command[Literal["generate_plan"
                 logger.info(f"🔄 [validate_plan] Retrying (attempt {attempts + 1}/{max_attempts})")
                 return Command(
                     update={
-                        "errors": errors,
+                        "errors": validation_result.errors,
                         "travel_plan": None,  # Clear invalid plan
                     },
                     goto="generate_plan"  # Retry
@@ -392,7 +392,7 @@ async def validate_plan(state: PlanningState) -> Command[Literal["generate_plan"
                 logger.warning(f"⚠️ [validate_plan] Max attempts reached ({max_attempts})")
                 # End with errors
                 return Command(
-                    update={"errors": errors},
+                    update={"errors": validation_result.errors},
                     goto=END
                 )
 
@@ -403,9 +403,8 @@ async def validate_plan(state: PlanningState) -> Command[Literal["generate_plan"
             goto=END
         )
 
-    except json.JSONDecodeError as e:
-        logger.error(f"❌ [validate_plan] JSON decode failed: {e}")
-        logger.debug(f"Raw response: {response.content[:500]}")
+    except Exception as e:
+        logger.error(f"❌ [validate_plan] Validation failed: {e}")
         # Route to END with error
         return Command(
             update={"errors": ["Validation check failed"]},

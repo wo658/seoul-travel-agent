@@ -2,11 +2,13 @@
 
 import json
 import logging
-from typing import Any, Literal
+from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import Command
 
+from app.ai.agents.planner.models import TravelPlan
+from app.ai.agents.reviewer.models import FeedbackParsing
 from app.ai.agents.reviewer.prompts import MODIFY_PLAN_PROMPT, PARSE_FEEDBACK_PROMPT
 from app.ai.agents.reviewer.state import ReviewState
 from app.ai.agents.utils import get_llm
@@ -19,6 +21,7 @@ async def parse_feedback(state: ReviewState) -> Command[Literal["__end__", "fetc
     from langgraph.graph import END
 
     llm = get_llm(temperature=0)
+    structured_llm = llm.with_structured_output(FeedbackParsing)
 
     prompt = PARSE_FEEDBACK_PROMPT.format(
         original_plan=json.dumps(state["original_plan"], ensure_ascii=False),
@@ -30,14 +33,12 @@ async def parse_feedback(state: ReviewState) -> Command[Literal["__end__", "fetc
         HumanMessage(content=prompt),
     ]
 
-    response = await llm.ainvoke(messages)
-
     try:
-        parsed = json.loads(response.content)
-        feedback_type = parsed.get("feedback_type")
+        parsed: FeedbackParsing = await structured_llm.ainvoke(messages)
+        logger.debug(f"🤖 Parsed feedback: {parsed.model_dump()}")
 
         # Route based on feedback type
-        if feedback_type == "approve":
+        if parsed.feedback_type == "approve":
             logger.info("✅ [parse_feedback] User approved plan")
             return Command(
                 update={
@@ -46,7 +47,7 @@ async def parse_feedback(state: ReviewState) -> Command[Literal["__end__", "fetc
                 },
                 goto=END
             )
-        elif feedback_type == "reject":
+        elif parsed.feedback_type == "reject":
             logger.info("❌ [parse_feedback] User rejected plan")
             return Command(
                 update={
@@ -56,12 +57,12 @@ async def parse_feedback(state: ReviewState) -> Command[Literal["__end__", "fetc
                 goto=END
             )
         else:  # modify
-            logger.info(f"🔧 [parse_feedback] User requested modifications: {parsed.get('modification_type')}")
+            logger.info(f"🔧 [parse_feedback] User requested modifications: {parsed.modification_type}")
             return Command(
                 update={
                     "feedback_type": "modify",
-                    "target_section": parsed.get("target_section"),
-                    "modification_type": parsed.get("modification_type", "general"),
+                    "target_section": parsed.target_section,
+                    "modification_type": parsed.modification_type or "general",
                     "iteration": state.get("iteration", 0) + 1,
                     "attractions": [],
                     "restaurants": [],
@@ -69,7 +70,7 @@ async def parse_feedback(state: ReviewState) -> Command[Literal["__end__", "fetc
                 },
                 goto="fetch_context"
             )
-    except json.JSONDecodeError as e:
+    except Exception as e:
         logger.error(f"❌ [parse_feedback] Failed to parse feedback: {e}")
         # Default to reject on parse error
         return Command(
@@ -88,6 +89,7 @@ async def modify_plan(state: ReviewState) -> Command[Literal["validate"]]:
     logger.info("Modifying plan with fetched context")
 
     llm = get_llm(temperature=0.3)
+    structured_llm = llm.with_structured_output(TravelPlan)
 
     # Prepare context data for LLM
     context_data = {
@@ -118,23 +120,17 @@ async def modify_plan(state: ReviewState) -> Command[Literal["validate"]]:
     ]
 
     try:
-        response = await llm.ainvoke(messages)
-        modified_plan = json.loads(response.content)
+        modified_plan: TravelPlan = await structured_llm.ainvoke(messages)
+        logger.info("✅ [modify_plan] Plan modification successful")
 
-        logger.info("Plan modification successful")
+        # Convert to dict for state
         return Command(
-            update={"modified_plan": modified_plan},
-            goto="validate"
-        )
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse modified plan: {e}")
-        # Return original plan on error
-        return Command(
-            update={"modified_plan": state["original_plan"]},
+            update={"modified_plan": modified_plan.model_dump()},
             goto="validate"
         )
     except Exception as e:
-        logger.error(f"Error modifying plan: {e}", exc_info=True)
+        logger.error(f"❌ [modify_plan] Failed to modify plan: {e}")
+        # Return original plan on error
         return Command(
             update={"modified_plan": state["original_plan"]},
             goto="validate"

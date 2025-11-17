@@ -2,23 +2,16 @@
 
 COLLECT_INFO_PROMPT = """You are a travel planning assistant analyzing user requests.
 
-Extract structured information from the user's travel request:
-- Travel dates (start and end)
-- Budget amount (in KRW)
-- Interests and preferences
-- Number of travelers
-- Special requirements
+Extract structured information from the following user's travel request:
 
 User request: {user_request}
 
-Return a JSON object with:
-{{
-    "dates": ["YYYY-MM-DD", "YYYY-MM-DD"],
-    "budget": <int>,
-    "interests": [<list of strings>],
-    "travelers": <int>,
-    "special_requirements": [<list of strings>]
-}}
+Extract:
+- Travel dates (start and end dates in YYYY-MM-DD format)
+- Budget amount (total budget in Korean Won)
+- Interests and preferences (list of activities or themes the user is interested in)
+
+If any information is not explicitly mentioned, use null for that field.
 """
 
 GENERATE_PLAN_PROMPT = """You are an expert Seoul travel planner creating detailed itineraries.
@@ -35,54 +28,26 @@ Available venues:
 - Accommodations: {accommodations}
 
 Requirements:
-1. Use ACTUAL dates from the travel period above (not YYYY-MM-DD placeholders)
-2. Create day-by-day itinerary with specific times (HH:MM format)
+1. Use ACTUAL dates from the travel period {start_date} to {end_date} (not placeholders)
+   - Example: Day 1 should use "{start_date}", Day 2 should be the next day, etc.
+2. Create day-by-day itinerary with specific times in HH:MM format (e.g., "09:30", "14:00")
 3. Select venues from the provided lists above
 4. Distribute budget reasonably across days
-5. Consider typical opening hours (museums 10:00-18:00, restaurants 11:00-22:00)
-6. Include breakfast, lunch, dinner for each day
+5. Consider typical opening hours:
+   - Museums/Attractions: 10:00-18:00
+   - Restaurants: 11:00-22:00
+   - Activities should have realistic durations (30-180 minutes)
+6. Include breakfast, lunch, and dinner for each day
+7. Estimate costs for each activity
+8. Create an engaging title and summary for the travel plan
+9. Select one accommodation from the available list for the entire trip
 
-IMPORTANT: Fill in the "date" field with real dates from the period {start_date} to {end_date}.
-For example, if the trip is Jan 15-17:
-- Day 1 date: "2025-01-15"
-- Day 2 date: "2025-01-16"
-- Day 3 date: "2025-01-17"
-
-Return a JSON object with:
-{{
-    "title": "<plan title>",
-    "total_days": <int>,
-    "total_cost": <int>,
-    "itinerary": [
-        {{
-            "day": 1,
-            "date": "<ACTUAL DATE from travel period, e.g., 2025-01-15>",
-            "theme": "<day theme>",
-            "activities": [
-                {{
-                    "time": "HH:MM",
-                    "venue_name": "<name from available venues>",
-                    "venue_type": "attraction|restaurant|accommodation",
-                    "duration_minutes": <int>,
-                    "estimated_cost": <int>,
-                    "notes": "<brief notes or tips>"
-                }}
-            ],
-            "daily_cost": <int>
-        }}
-    ],
-    "accommodation": {{
-        "name": "<hotel name from available accommodations>",
-        "cost_per_night": <int>,
-        "total_nights": <int>
-    }},
-    "summary": "<brief plan summary>"
-}}
+Ensure the total cost stays within or close to the budget.
 """
 
-VALIDATE_PLAN_PROMPT = """Validate this travel plan for CRITICAL logical errors only:
+VALIDATE_PLAN_PROMPT = """Validate this travel plan for CRITICAL logical errors only.
 
-Plan: {plan}
+Plan to validate: {plan}
 Budget: {budget:,} KRW
 
 Check ONLY for these CRITICAL issues:
@@ -91,15 +56,13 @@ Check ONLY for these CRITICAL issues:
 3. Missing dates: Any day missing the "date" field or using "YYYY-MM-DD" placeholder
 4. Empty itinerary: No activities planned
 
-DO NOT flag these as errors (they are acceptable):
+DO NOT flag these as acceptable variations:
 - Missing detailed cost breakdowns (estimated costs are fine)
 - Missing explicit travel time between venues (assume 10-30 min buffer)
 - Opening hours not verified (assume typical business hours)
 - Minor timing issues (5-10 minute overlaps are acceptable)
 
-Return validation result as JSON:
-{{
-    "is_valid": true|false,
-    "errors": [<list of CRITICAL error messages only>]
-}}
+Return your validation result with:
+- is_valid: true if no critical errors, false otherwise
+- errors: list of specific error messages (empty list if valid)
 """
