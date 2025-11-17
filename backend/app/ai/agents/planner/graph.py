@@ -2,7 +2,7 @@
 
 import logging
 
-from langgraph.graph import END, START, StateGraph
+from langgraph.graph import START, StateGraph
 
 from app.ai.agents.planner.nodes import (
     collect_info,
@@ -17,12 +17,19 @@ logger = logging.getLogger(__name__)
 def create_planner_graph() -> StateGraph:
     """Create and configure the planner agent graph.
 
-    Flow:
+    Flow (using Command-based routing):
     START → collect_info → fetch_venues → generate_plan → END
 
-    Note: Validation step temporarily disabled
+    Note: Validation step temporarily disabled, but validate_plan node
+    has been updated to use Command-based routing for future use.
+
+    All routing is handled by Command objects returned from nodes:
+    - collect_info routes to: fetch_venues
+    - fetch_venues routes to: generate_plan
+    - generate_plan routes to: END
+    - validate_plan (disabled) routes to: generate_plan (retry) or END (valid/max attempts)
     """
-    logger.info("🏗️ Creating planner graph")
+    logger.info("🏗️ Creating planner graph with Command-based routing")
 
     # Initialize graph with PlanningState
     graph = StateGraph(PlanningState)
@@ -34,25 +41,14 @@ def create_planner_graph() -> StateGraph:
     # graph.add_node("validate", validate_plan)  # Temporarily disabled
     logger.debug("📦 Added 3 nodes: collect_info, fetch_venues, generate_plan")
 
-    # Define edges
+    # Define entry edge
     graph.add_edge(START, "collect_info")
-    graph.add_edge("collect_info", "fetch_venues")
-    graph.add_edge("fetch_venues", "generate_plan")
-    graph.add_edge("generate_plan", END)  # Direct to END, bypassing validation
-    logger.debug("🔗 Added sequential edges")
+    logger.debug("🔗 Added entry edge from START to collect_info")
 
-    # Conditional routing: retry or end (temporarily disabled)
-    # graph.add_conditional_edges(
-    #     "validate",
-    #     should_retry,
-    #     {
-    #         "retry": "generate_plan",
-    #         "end": END,
-    #     },
-    # )
-    # logger.debug("🔀 Added conditional edges for retry logic")
+    # Note: All other routing is handled by Command objects returned from nodes
+    # No need for explicit edges between nodes - Command handles routing
 
-    logger.info("✅ Planner graph created successfully (validation disabled)")
+    logger.info("✅ Planner graph created successfully with Command-based routing (validation disabled)")
     return graph
 
 

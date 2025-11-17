@@ -2,9 +2,10 @@
 
 import json
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.types import Command
 
 from app.ai.agents.reviewer.prompts import MODIFY_PLAN_PROMPT, PARSE_FEEDBACK_PROMPT
 from app.ai.agents.reviewer.state import ReviewState
@@ -13,8 +14,10 @@ from app.ai.agents.utils import get_llm
 logger = logging.getLogger(__name__)
 
 
-async def parse_feedback(state: ReviewState) -> dict[str, Any]:
+async def parse_feedback(state: ReviewState) -> Command[Literal["__end__", "fetch_context"]]:
     """Parse user feedback to determine action type and modification needs."""
+    from langgraph.graph import END
+
     llm = get_llm(temperature=0)
 
     prompt = PARSE_FEEDBACK_PROMPT.format(
@@ -31,26 +34,56 @@ async def parse_feedback(state: ReviewState) -> dict[str, Any]:
 
     try:
         parsed = json.loads(response.content)
+        feedback_type = parsed.get("feedback_type")
 
-        return {
-            "feedback_type": parsed.get("feedback_type"),
-            "target_section": parsed.get("target_section"),
-            "modification_type": parsed.get("modification_type", "general"),
-            "iteration": state.get("iteration", 0) + 1,
-            "attractions": [],
-            "restaurants": [],
-            "accommodations": [],
-        }
-    except json.JSONDecodeError:
-        return {
-            "feedback_type": "reject",  # Default to reject on parse error
-            "target_section": None,
-            "modification_type": None,
-            "iteration": state.get("iteration", 0) + 1,
-        }
+        # Route based on feedback type
+        if feedback_type == "approve":
+            logger.info("✅ [parse_feedback] User approved plan")
+            return Command(
+                update={
+                    "feedback_type": "approve",
+                    "iteration": state.get("iteration", 0) + 1,
+                },
+                goto=END
+            )
+        elif feedback_type == "reject":
+            logger.info("❌ [parse_feedback] User rejected plan")
+            return Command(
+                update={
+                    "feedback_type": "reject",
+                    "iteration": state.get("iteration", 0) + 1,
+                },
+                goto=END
+            )
+        else:  # modify
+            logger.info(f"🔧 [parse_feedback] User requested modifications: {parsed.get('modification_type')}")
+            return Command(
+                update={
+                    "feedback_type": "modify",
+                    "target_section": parsed.get("target_section"),
+                    "modification_type": parsed.get("modification_type", "general"),
+                    "iteration": state.get("iteration", 0) + 1,
+                    "attractions": [],
+                    "restaurants": [],
+                    "accommodations": [],
+                },
+                goto="fetch_context"
+            )
+    except json.JSONDecodeError as e:
+        logger.error(f"❌ [parse_feedback] Failed to parse feedback: {e}")
+        # Default to reject on parse error
+        return Command(
+            update={
+                "feedback_type": "reject",
+                "target_section": None,
+                "modification_type": None,
+                "iteration": state.get("iteration", 0) + 1,
+            },
+            goto=END
+        )
 
 
-async def modify_plan(state: ReviewState) -> dict[str, Any]:
+async def modify_plan(state: ReviewState) -> Command[Literal["validate"]]:
     """Modify specific section of the plan based on feedback and fetched context."""
     logger.info("Modifying plan with fetched context")
 
@@ -89,41 +122,58 @@ async def modify_plan(state: ReviewState) -> dict[str, Any]:
         modified_plan = json.loads(response.content)
 
         logger.info("Plan modification successful")
-        return {
-            "modified_plan": modified_plan,
-        }
+        return Command(
+            update={"modified_plan": modified_plan},
+            goto="validate"
+        )
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse modified plan: {e}")
-        return {
-            "modified_plan": state["original_plan"],  # Return original on error
-        }
+        # Return original plan on error
+        return Command(
+            update={"modified_plan": state["original_plan"]},
+            goto="validate"
+        )
     except Exception as e:
         logger.error(f"Error modifying plan: {e}", exc_info=True)
-        return {
-            "modified_plan": state["original_plan"],
-        }
+        return Command(
+            update={"modified_plan": state["original_plan"]},
+            goto="validate"
+        )
 
 
-async def validate_modification(state: ReviewState) -> dict[str, Any]:
+async def validate_modification(state: ReviewState) -> Command[Literal["__end__"]]:
     """Validate modified plan maintains consistency."""
+    from langgraph.graph import END
+
     # Simple validation: ensure modified plan has required structure
     modified = state.get("modified_plan")
 
     if not modified:
-        return {}
+        logger.info("✅ [validate_modification] No modified plan to validate")
+        return Command(
+            update={},
+            goto=END
+        )
 
     required_keys = ["title", "total_days", "days", "total_cost"]
     missing_keys = [key for key in required_keys if key not in modified]
 
     if missing_keys:
-        return {
-            "modified_plan": state["original_plan"],  # Revert to original
-        }
+        logger.warning(f"⚠️ [validate_modification] Missing keys: {missing_keys}, reverting to original")
+        # Revert to original plan
+        return Command(
+            update={"modified_plan": state["original_plan"]},
+            goto=END
+        )
 
-    return {}  # Validation passed
+    logger.info("✅ [validate_modification] Plan validation passed")
+    return Command(
+        update={},
+        goto=END
+    )
 
 
-async def fetch_context(state: ReviewState) -> dict[str, Any]:
+async def fetch_context(state: ReviewState) -> Command[Literal["modify_plan"]]:
     """Fetch additional context data based on modification type.
 
     Fetches data from:
@@ -144,7 +194,10 @@ async def fetch_context(state: ReviewState) -> dict[str, Any]:
     # Skip context fetching if not needed
     if modification_type in ["budget", "time", "general", None]:
         logger.info("Modification doesn't require external data - skipping context fetch")
-        return result
+        return Command(
+            update=result,
+            goto="modify_plan"
+        )
 
     try:
         from app.database import SessionLocal
@@ -222,18 +275,11 @@ async def fetch_context(state: ReviewState) -> dict[str, Any]:
         logger.error(f"Error fetching context: {e}", exc_info=True)
         # Continue with empty results rather than failing
 
-    return result
+    # Route to modify_plan with fetched context
+    return Command(
+        update=result,
+        goto="modify_plan"
+    )
 
 
-def route_feedback(state: ReviewState) -> str:
-    """Routing function: determine next action based on feedback type."""
-    feedback_type = state.get("feedback_type")
-
-    if feedback_type == "approve":
-        return "approve"
-    elif feedback_type == "reject":
-        return "reject"
-    elif feedback_type == "modify":
-        return "modify"
-    else:
-        return "reject"  # Default to reject
+# Note: route_feedback function removed - routing now handled by Command in parse_feedback node

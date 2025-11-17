@@ -3,9 +3,10 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.types import Command
 
 from app.ai.agents.planner.prompts import (
     COLLECT_INFO_PROMPT,
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 CHROMA_DB_PATH = str(Path(__file__).parent.parent.parent.parent.parent / "chroma_db")
 
 
-async def collect_info(state: PlanningState) -> dict[str, Any]:
+async def collect_info(state: PlanningState) -> Command[Literal["fetch_venues"]]:
     """Parse user request and extract structured information.
 
     Priority:
@@ -81,15 +82,22 @@ async def collect_info(state: PlanningState) -> dict[str, Any]:
 
         except (json.JSONDecodeError, Exception) as e:
             logger.error(f"❌ [collect_info] LLM parsing failed: {e}")
-            return {
-                "errors": ["Failed to parse user request. Please provide clearer information."]
-            }
+            # On error, still proceed to fetch_venues but with error state
+            return Command(
+                update={"errors": ["Failed to parse user request. Please provide clearer information."]},
+                goto="fetch_venues"
+            )
 
     logger.info(f"✅ [collect_info] Final result: dates={result.get('dates')}, budget={result.get('budget')}, interests={result.get('interests')}")
-    return result
+
+    # Route to fetch_venues with updated state
+    return Command(
+        update=result,
+        goto="fetch_venues"
+    )
 
 
-async def fetch_venues(state: PlanningState) -> dict[str, Any]:
+async def fetch_venues(state: PlanningState) -> Command[Literal["generate_plan"]]:
     """Fetch tourist attractions using ChromaDB and search nearby venues via Naver API."""
     logger.info("🔵 [fetch_venues] Node started")
     logger.debug(f"📥 Input state: interests={state.get('interests')}, budget={state.get('budget')}, dates={state.get('dates')}")
@@ -219,25 +227,35 @@ async def fetch_venues(state: PlanningState) -> dict[str, Any]:
         except Exception as e:
             logger.warning(f"⚠️ [fetch_venues] Naver API error (continuing with attractions only): {e}")
 
-        return {
-            "attractions": selected_attractions,
-            "restaurants": all_restaurants,
-            "accommodations": all_accommodations,
-        }
+        # Route to generate_plan with fetched venue data
+        return Command(
+            update={
+                "attractions": selected_attractions,
+                "restaurants": all_restaurants,
+                "accommodations": all_accommodations,
+            },
+            goto="generate_plan"
+        )
 
     except Exception as e:
         logger.error(f"❌ [fetch_venues] Error during venue search: {e}", exc_info=True)
-        return {
-            "attractions": [],
-            "restaurants": [],
-            "accommodations": [],
-        }
+        # On error, still proceed to generate_plan with empty data
+        return Command(
+            update={
+                "attractions": [],
+                "restaurants": [],
+                "accommodations": [],
+            },
+            goto="generate_plan"
+        )
     finally:
         db.close()
 
 
-async def generate_plan(state: PlanningState) -> dict[str, Any]:
+async def generate_plan(state: PlanningState) -> Command[Literal["__end__"]]:
     """Generate travel plan using LLM."""
+    from langgraph.graph import END
+
     attempt = state.get("attempts", 0) + 1
     logger.info(f"🔵 [generate_plan] Node started (attempt {attempt})")
     logger.debug(f"📥 Input state: dates={state.get('dates')}, budget={state.get('budget')}, interests={state.get('interests')}")
@@ -292,26 +310,43 @@ async def generate_plan(state: PlanningState) -> dict[str, Any]:
         travel_plan = json.loads(response.content)
         logger.info(f"✅ [generate_plan] Successfully generated plan with {len(travel_plan.get('itinerary', []))} days")
 
-        return {
-            "travel_plan": travel_plan,
-            "attempts": attempt,
-        }
+        # Route to END with completed plan
+        return Command(
+            update={
+                "travel_plan": travel_plan,
+                "attempts": attempt,
+            },
+            goto=END
+        )
     except json.JSONDecodeError as e:
         logger.error(f"❌ [generate_plan] JSON decode failed: {e}")
         logger.debug(f"Raw response: {response.content[:500]}")
-        return {
-            "errors": ["Failed to generate valid plan structure."],
-            "attempts": attempt,
-        }
+        # Route to END even on error
+        return Command(
+            update={
+                "errors": ["Failed to generate valid plan structure."],
+                "attempts": attempt,
+            },
+            goto=END
+        )
 
 
-async def validate_plan(state: PlanningState) -> dict[str, Any]:
-    """Validate generated plan for logical consistency."""
+async def validate_plan(state: PlanningState) -> Command[Literal["generate_plan", "__end__"]]:
+    """Validate generated plan for logical consistency.
+
+    Note: Currently disabled in graph, but kept for future use.
+    """
+    from langgraph.graph import END
+
     logger.info("🔵 [validate_plan] Node started")
 
     if not state.get("travel_plan"):
         logger.error("❌ [validate_plan] No plan to validate")
-        return {"errors": ["No plan to validate"]}
+        # Route to END with error
+        return Command(
+            update={"errors": ["No plan to validate"]},
+            goto=END
+        )
 
     logger.debug(f"📥 Validating plan with {len(state['travel_plan'].get('itinerary', []))} days")
 
@@ -339,39 +374,40 @@ async def validate_plan(state: PlanningState) -> dict[str, Any]:
         if not validation_result.get("is_valid", False):
             errors = validation_result.get("errors", [])
             logger.warning(f"⚠️ [validate_plan] Plan validation failed: {errors}")
-            return {
-                "errors": errors,
-                "travel_plan": None,  # Clear invalid plan
-            }
+
+            max_attempts = 3
+            attempts = state.get("attempts", 0)
+
+            # Retry if under max attempts
+            if attempts < max_attempts:
+                logger.info(f"🔄 [validate_plan] Retrying (attempt {attempts + 1}/{max_attempts})")
+                return Command(
+                    update={
+                        "errors": errors,
+                        "travel_plan": None,  # Clear invalid plan
+                    },
+                    goto="generate_plan"  # Retry
+                )
+            else:
+                logger.warning(f"⚠️ [validate_plan] Max attempts reached ({max_attempts})")
+                # End with errors
+                return Command(
+                    update={"errors": errors},
+                    goto=END
+                )
 
         logger.info("✅ [validate_plan] Plan is valid")
-        return {}  # Valid plan, no changes needed
+        # Valid plan, route to END
+        return Command(
+            update={},
+            goto=END
+        )
 
     except json.JSONDecodeError as e:
         logger.error(f"❌ [validate_plan] JSON decode failed: {e}")
         logger.debug(f"Raw response: {response.content[:500]}")
-        return {"errors": ["Validation check failed"]}
-
-
-def should_retry(state: PlanningState) -> str:
-    """Routing function: decide whether to retry plan generation."""
-    max_attempts = 3
-    attempts = state.get("attempts", 0)
-    errors = state.get("errors", [])
-
-    logger.info("🔵 [should_retry] Routing decision started")
-    logger.debug(f"📥 State: attempts={attempts}/{max_attempts}, errors={len(errors)}")
-
-    # If there are errors and haven't exceeded max attempts
-    if errors and attempts < max_attempts:
-        logger.info(f"🔄 [should_retry] Retrying (attempt {attempts + 1}/{max_attempts})")
-        logger.debug(f"Retry reason: {errors}")
-        return "retry"
-
-    # If validation passed or max attempts reached
-    if attempts >= max_attempts:
-        logger.warning(f"⚠️ [should_retry] Max attempts reached ({max_attempts})")
-    else:
-        logger.info("✅ [should_retry] Plan is valid, ending graph")
-
-    return "end"
+        # Route to END with error
+        return Command(
+            update={"errors": ["Validation check failed"]},
+            goto=END
+        )
